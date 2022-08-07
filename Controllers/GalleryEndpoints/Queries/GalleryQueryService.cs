@@ -1,3 +1,4 @@
+using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Options;
 using FluentFTP;
 using Microsoft.Extensions.Options;
@@ -8,25 +9,27 @@ public class GalleryQueryService : IGalleryQueryService
 {
     private const string _galleryPath = "/home/www/gallery/";
     private readonly PublicAppSettingsOptions _appSettingsOptions;
-    private readonly FtpClient _ftpClient;
+    private readonly FtpClientFactory _ftpClientFactory;
 
     public GalleryQueryService(
         IOptions<PublicAppSettingsOptions> appSettingsOptions,
-        FtpClient ftpClient)
+        FtpClientFactory ftpClientFactory)
     {
         _appSettingsOptions = appSettingsOptions.Value;
-        this._ftpClient = ftpClient;
+        this._ftpClientFactory = ftpClientFactory;
     }
 
     public async Task<List<Uri>> GetAllUrisAsync()
     {
-        await _ftpClient.AutoConnectAsync();
-        List<Uri> uris = (await _ftpClient.GetNameListingAsync(_galleryPath))
-            .Select(fileName => new Uri($"{_appSettingsOptions.StorageServiceBaseUrl}/{fileName.Replace("/home/www/", string.Empty)}", UriKind.Absolute))
-            .ToList();
+        using (FtpClient ftpClient = _ftpClientFactory.GetClient())
+        {
+            await ftpClient.AutoConnectAsync();
+            List<Uri> uris = (await ftpClient.GetNameListingAsync(_galleryPath))
+                .Select(fileName => new Uri($"{_appSettingsOptions.StorageServiceBaseUrl}/{fileName.Replace("/home/www/", string.Empty)}", UriKind.Absolute))
+                .ToList();
 
-        _ftpClient.Dispose();
-        return uris;
+            return uris;
+        }
     }
 
     public Uri GetUriByName(string fileName)

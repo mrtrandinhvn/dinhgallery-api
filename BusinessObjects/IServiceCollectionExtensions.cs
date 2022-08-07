@@ -1,10 +1,8 @@
 using dinhgallery_api.BusinessObjects.Options;
 using dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries;
-using FluentFTP;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Options;
 
 namespace dinhgallery_api.BusinessObjects;
 
@@ -29,11 +27,6 @@ public static class IServiceCollectionExtensions
     {
         services.AddScoped<IGalleryCommandService, GalleryCommandService>();
         services.AddScoped<IGalleryQueryService, GalleryQueryService>();
-        services.AddTransient<FtpClient>(sp =>
-        {
-            PublicAppSettingsOptions appSettings = sp.GetRequiredService<IOptions<PublicAppSettingsOptions>>().Value;
-            FtpClient ftpClient = new(appSettings.FtpHost, appSettings.FtpUsername, appSettings.FtpPassword);
-            return ftpClient;
-        });
+        services.AddScoped<FtpClientFactory>();
     }
 }

@@ -1,5 +1,7 @@
 using dinhgallery_api.BusinessObjects;
+using dinhgallery_api.BusinessObjects.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
@@ -40,6 +42,13 @@ services.AddSwaggerGen(options =>
     });
 });
 
+services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireRole(AppRole.Admin)
+        .Build();
+});
 services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
 services.ConfigureOptions(builder.Configuration);
 services.AddAppServices();

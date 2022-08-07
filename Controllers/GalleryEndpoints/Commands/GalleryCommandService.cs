@@ -1,58 +1,64 @@
+using dinhgallery_api.BusinessObjects;
+
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
+
 public class GalleryCommandService : IGalleryCommandService
 {
-    private readonly ILogger<GalleryCommandService> _logger;
-    private readonly IWebHostEnvironment _hostingEnv;
+    private const string _galleryPath = "/home/www/gallery/";
+    private readonly FtpClientFactory _ftpClientFactory;
 
-    private string _uploadFolder => Path.Combine(_hostingEnv.WebRootPath, "UserUploadedFiles");
+    private readonly ILogger<GalleryCommandService> _logger;
 
     public GalleryCommandService(
         ILogger<GalleryCommandService> logger,
-        IWebHostEnvironment env)
+        FtpClientFactory ftpClientFactory)
     {
         _logger = logger;
-        _hostingEnv = env;
+        _ftpClientFactory = ftpClientFactory;
     }
 
-    public bool Delete(string fileName)
+    public async Task<bool> DeleteAsync(string fileName)
     {
-        throw new NotImplementedException("Under development");
-        string filePath = Path.Combine(_uploadFolder, fileName);
-        if (File.Exists(filePath))
+        using (var ftpClient = _ftpClientFactory.GetClient())
         {
-            File.Delete(filePath);
-        }
+            await ftpClient.AutoConnectAsync();
+            await ftpClient.SetWorkingDirectoryAsync(_galleryPath);
+            if (await ftpClient.FileExistsAsync(fileName))
+            {
+                await ftpClient.DeleteFileAsync(fileName);
+            }
 
-        return true;
+            return true;
+        }
     }
 
-    public async Task<List<string>> SaveFilesAsync(IFormFileCollection files)
+    public Task<List<string>> SaveFilesAsync(IFormFileCollection files)
     {
         throw new NotImplementedException("Under development");
         List<string> savedFiles = new List<string>();
-        foreach (IFormFile file in files)
-        {
-            if (file.Length > 0)
-            {
-                Guid fileId = Guid.NewGuid();
-                string fileName = fileId.ToString() + Path.GetExtension(file.FileName);
-                string filePath = Path.Combine(_uploadFolder, fileName);
-                try
-                {
-                    using (Stream fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(fileStream);
-                        savedFiles.Add(fileName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error while saving file to path '{filePath}'.");
-                    continue;
-                }
-            }
-        }
+        // foreach (IFormFile file in files)
+        // {
+        //     if (file.Length > 0)
+        //     {
+        //         Guid fileId = Guid.NewGuid();
+        //         string fileName = fileId.ToString() + Path.GetExtension(file.FileName);
+        //         string filePath = Path.Combine(_uploadFolder, fileName);
+        //         try
+        //         {
+        //             using (Stream fileStream = new FileStream(filePath, FileMode.Create))
+        //             {
+        //                 await file.CopyToAsync(fileStream);
+        //                 savedFiles.Add(fileName);
+        //             }
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             _logger.LogError(ex, $"Error while saving file to path '{filePath}'.");
+        //             continue;
+        //         }
+        //     }
+        // }
 
-        return savedFiles;
+        return Task.FromResult(savedFiles);
     }
 }
