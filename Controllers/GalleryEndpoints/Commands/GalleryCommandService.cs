@@ -32,33 +32,37 @@ public class GalleryCommandService : IGalleryCommandService
         }
     }
 
-    public Task<List<string>> SaveFilesAsync(IFormFileCollection files)
+    public async Task<List<string>> SaveFilesAsync(IFormFileCollection files)
     {
-        throw new NotImplementedException("Under development");
         List<string> savedFiles = new List<string>();
-        // foreach (IFormFile file in files)
-        // {
-        //     if (file.Length > 0)
-        //     {
-        //         Guid fileId = Guid.NewGuid();
-        //         string fileName = fileId.ToString() + Path.GetExtension(file.FileName);
-        //         string filePath = Path.Combine(_uploadFolder, fileName);
-        //         try
-        //         {
-        //             using (Stream fileStream = new FileStream(filePath, FileMode.Create))
-        //             {
-        //                 await file.CopyToAsync(fileStream);
-        //                 savedFiles.Add(fileName);
-        //             }
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             _logger.LogError(ex, $"Error while saving file to path '{filePath}'.");
-        //             continue;
-        //         }
-        //     }
-        // }
+        foreach (IFormFile file in files)
+        {
+            if (file.Length > 0)
+            {
+                using (var ftpClient = _ftpClientFactory.GetClient())
+                {
+                    await ftpClient.AutoConnectAsync();
+                    await ftpClient.SetWorkingDirectoryAsync(_galleryPath);
+                    Guid fileId = Guid.NewGuid();
+                    string fileName = fileId.ToString() + Path.GetExtension(file.FileName);
+                    try
+                    {
+                        using (MemoryStream fileStream = new MemoryStream())
+                        {
+                            await file.CopyToAsync(fileStream);
+                            await ftpClient.UploadBytesAsync(fileStream.ToArray(), fileName);
+                            savedFiles.Add(fileName);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Error while saving file to path '{await ftpClient.GetWorkingDirectoryAsync()}'.");
+                        continue;
+                    }
+                }
+            }
+        }
 
-        return Task.FromResult(savedFiles);
+        return savedFiles;
     }
 }

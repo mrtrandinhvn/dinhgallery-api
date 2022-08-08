@@ -1,3 +1,4 @@
+using dinhgallery_api.Controllers.GalleryEndpoints.Queries;
 using Microsoft.AspNetCore.Mvc;
 
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
@@ -6,17 +7,29 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 [Route("gallery")]
 public class GalleryCommandControler : ControllerBase
 {
-    private readonly IGalleryCommandService _service;
+    private readonly IGalleryCommandService _commandService;
+    private readonly IGalleryQueryService _queryService;
 
-    public GalleryCommandControler(IGalleryCommandService service)
+    public GalleryCommandControler(
+        IGalleryCommandService commandService,
+        IGalleryQueryService queryService)
     {
-        _service = service;
+        _commandService = commandService;
+        this._queryService = queryService;
     }
 
     [HttpDelete]
     [Route("{fileName}")]
     public Task<bool> Delete(string fileName)
     {
-        return _service.DeleteAsync(fileName);
+        return _commandService.DeleteAsync(fileName);
+    }
+
+    [HttpPost]
+    public async Task<IEnumerable<Uri>> Post()
+    {
+        IEnumerable<Uri> savedFileUris = (await _commandService.SaveFilesAsync(Request.Form.Files))
+            .Select(fileName => _queryService.GetUriByName(fileName));
+        return savedFileUris;
     }
 }
