@@ -24,8 +24,9 @@ public class GalleryQueryService : IGalleryQueryService
         using (FtpClient ftpClient = _ftpClientFactory.GetClient())
         {
             await ftpClient.AutoConnectAsync();
-            List<Uri> uris = (await ftpClient.GetNameListingAsync(_galleryPath))
-                .Select(fileName => new Uri($"{_appSettingsOptions.StorageServiceBaseUrl}/{fileName.Replace("/home/www/", string.Empty)}", UriKind.Absolute))
+            List<Uri> uris = (await ftpClient.GetListingAsync(_galleryPath))
+                .OrderByDescending(ftpFile => ftpFile.Modified)
+                .Select(ftpFile => new Uri($"{_appSettingsOptions.StorageServiceBaseUrl}/gallery/{ftpFile.Name}", UriKind.Absolute))
                 .ToList();
 
             return uris;
