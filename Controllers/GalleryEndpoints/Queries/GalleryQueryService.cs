@@ -27,6 +27,7 @@ public class GalleryQueryService : IGalleryQueryService
             List<Uri> uris = (await ftpClient.GetListingAsync(_galleryPath))
                 .OrderByDescending(ftpFile => ftpFile.Modified)
                 .Select(ftpFile => new Uri($"{_appSettingsOptions.StorageServiceBaseUrl}/gallery/{ftpFile.Name}", UriKind.Absolute))
+                .Take(10)
                 .ToList();
 
             return uris;

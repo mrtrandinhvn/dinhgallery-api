@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +69,11 @@ services.AddCors(options =>
             .WithHeaders("Authorization");
     });
 });
+services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    return ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"));
+});
+
 
 var app = builder.Build();
 
