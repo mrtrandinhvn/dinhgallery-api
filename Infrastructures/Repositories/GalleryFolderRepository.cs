@@ -22,6 +22,7 @@ public class GalleryFolderRepository : IGalleryFolderRepository
             new HashEntry("displayName", input.DisplayName),
             new HashEntry("createdAtUtc", DateTime.UtcNow.ToString("o")),
         });
+
         return true;
     }
 }

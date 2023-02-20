@@ -1,8 +1,8 @@
 namespace dinhgallery_api.BusinessObjects.Options;
 
-public class PublicAppSettingsOptions
+public class StorageSettingsOptions
 {
-    public const string SectionName = "PublicAppSettings";
+    public const string SectionName = "StorageSettings";
 
     public string FtpHost { get; set; } = string.Empty;
     public string FtpUsername { get; set; } = string.Empty;

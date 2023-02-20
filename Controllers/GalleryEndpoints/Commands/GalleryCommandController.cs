@@ -26,10 +26,14 @@ public class GalleryCommandControler : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IEnumerable<Uri>> Post(string folderDisplayName)
+    public async Task<Guid> Post(string? folderDisplayName)
     {
-        IEnumerable<Uri> savedFileUris = (await _commandService.SaveFilesAsync(folderDisplayName, Request.Form.Files))
-            .Select(fileName => _queryService.GetUriByName(fileName));
-        return savedFileUris;
+        var savedFolderId = (await _commandService.SaveFilesAsync(new SaveFilesInput
+        {
+            FolderDisplayName = folderDisplayName,
+            FormFiles = Request.Form.Files,
+        }));
+
+        return savedFolderId;
     }
 }

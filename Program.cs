@@ -1,5 +1,7 @@
 using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Constants;
+using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
+using dinhgallery_api.Infrastructures.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
@@ -73,10 +75,10 @@ services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     return ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"));
 });
-
+services.AddScoped<IGalleryFolderRepository, GalleryFolderRepository>();
+services.AddScoped<IGalleryFileRepository, GalleryFileRepository>();
 
 var app = builder.Build();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

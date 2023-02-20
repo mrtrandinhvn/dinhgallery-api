@@ -6,9 +6,9 @@ namespace dinhgallery_api.BusinessObjects;
 
 public class FtpClientFactory
 {
-    private readonly PublicAppSettingsOptions _publicAppSettingsOptions;
+    private readonly StorageSettingsOptions _publicAppSettingsOptions;
 
-    public FtpClientFactory(IOptions<PublicAppSettingsOptions> publicAppSettingsOptions)
+    public FtpClientFactory(IOptions<StorageSettingsOptions> publicAppSettingsOptions)
     {
         this._publicAppSettingsOptions = publicAppSettingsOptions.Value;
     }

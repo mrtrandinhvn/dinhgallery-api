@@ -8,11 +8,11 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries;
 public class GalleryQueryService : IGalleryQueryService
 {
     private const string _galleryPath = "/home/www/gallery/";
-    private readonly PublicAppSettingsOptions _appSettingsOptions;
+    private readonly StorageSettingsOptions _appSettingsOptions;
     private readonly FtpClientFactory _ftpClientFactory;
 
     public GalleryQueryService(
-        IOptions<PublicAppSettingsOptions> appSettingsOptions,
+        IOptions<StorageSettingsOptions> appSettingsOptions,
         FtpClientFactory ftpClientFactory)
     {
         _appSettingsOptions = appSettingsOptions.Value;

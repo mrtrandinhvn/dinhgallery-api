@@ -2,6 +2,6 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 
 public interface IGalleryCommandService
 {
-    Task<List<string>> SaveFilesAsync(string folderDisplayName, IFormFileCollection files);
+    Task<Guid> SaveFilesAsync(SaveFilesInput input);
     Task<bool> DeleteAsync(string fileId);
 }

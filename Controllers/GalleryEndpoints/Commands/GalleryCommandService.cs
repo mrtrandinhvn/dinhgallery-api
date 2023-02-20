@@ -1,5 +1,7 @@
 using dinhgallery_api.BusinessObjects;
+using dinhgallery_api.BusinessObjects.Options;
 using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
+using Microsoft.Extensions.Options;
 
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 
@@ -9,18 +11,21 @@ public class GalleryCommandService : IGalleryCommandService
     private readonly FtpClientFactory _ftpClientFactory;
     private readonly IGalleryFolderRepository _folderRepository;
     private readonly IGalleryFileRepository _fileRepository;
+    private readonly StorageSettingsOptions _storageSettings;
     private readonly ILogger<GalleryCommandService> _logger;
 
     public GalleryCommandService(
         ILogger<GalleryCommandService> logger,
         FtpClientFactory ftpClientFactory,
         IGalleryFolderRepository folderRepository,
-        IGalleryFileRepository fileRepository)
+        IGalleryFileRepository fileRepository,
+        IOptions<StorageSettingsOptions> storageSettingsOptions)
     {
         _logger = logger;
         _ftpClientFactory = ftpClientFactory;
         _folderRepository = folderRepository;
         _fileRepository = fileRepository;
+        _storageSettings = storageSettingsOptions.Value;
     }
 
     public async Task<bool> DeleteAsync(string fileId)
@@ -38,52 +43,55 @@ public class GalleryCommandService : IGalleryCommandService
         }
     }
 
-    public async Task<List<string>> SaveFilesAsync(string folderDisplayName, IFormFileCollection files)
+    public async Task<Guid> SaveFilesAsync(SaveFilesInput input)
     {
-        List<string> savedFiles = new List<string>();
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(input.FormFiles);
         Guid folderId = Guid.NewGuid();
-        await _folderRepository.AddAsync(new GalleryFolderAddInput
-        {
-            Id = folderId,
-            DisplayName = folderDisplayName ?? folderId.ToString(),
-        });
 
         using (var ftpClient = _ftpClientFactory.GetClient())
         {
             await ftpClient.AutoConnectAsync();
+            await ftpClient.SetWorkingDirectoryAsync(_galleryPath);
             await ftpClient.CreateDirectoryAsync(folderId.ToString());
             await ftpClient.SetWorkingDirectoryAsync(_galleryPath + folderId + "/");
-            foreach (IFormFile file in files)
+            foreach (IFormFile file in input.FormFiles)
             {
                 if (file.Length > 0)
                 {
                     Guid fileId = Guid.NewGuid();
-                    string fileName = fileId.ToString() + Path.GetExtension(file.FileName);
+                    string physicalFileName = fileId.ToString() + Path.GetExtension(file.FileName);
                     try
                     {
                         using (MemoryStream fileStream = new())
                         {
                             await file.CopyToAsync(fileStream);
-                            await ftpClient.UploadBytesAsync(fileStream.ToArray(), fileName);
-                            savedFiles.Add(fileName);
+                            var saveToStorageTask = ftpClient.UploadBytesAsync(fileStream.ToArray(), physicalFileName);
+                            var saveToDbTask = _fileRepository.AddAsync(new GalleryFileAddInput
+                            {
+                                Id = fileId,
+                                FolderId = folderId,
+                                DisplayName = file.FileName,
+                                DownloadUrl = new Uri($"{_storageSettings.StorageServiceBaseUrl}/gallery/{folderId}/{physicalFileName}"),
+                            });
+                            await Task.WhenAll(saveToStorageTask, saveToDbTask);
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"Error while saving file to path '{await ftpClient.GetWorkingDirectoryAsync()}'.");
+                        _logger.LogError(ex, $"Error while saving '{file.FileName}'.");
                         continue;
                     }
-
-                    await _fileRepository.AddAsync(new GalleryFileAddInput
-                    {
-                        Id = fileId,
-                        FolderId = folderId,
-                        DisplayName = file.FileName,
-                    });
                 }
             }
         }
 
-        return savedFiles;
+        await _folderRepository.AddAsync(new GalleryFolderAddInput
+        {
+            Id = folderId,
+            DisplayName = input.FolderDisplayName ?? folderId.ToString(),
+        });
+
+        return folderId;
     }
 }

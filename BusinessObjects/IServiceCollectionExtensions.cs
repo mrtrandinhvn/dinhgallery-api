@@ -20,7 +20,7 @@ public static class IServiceCollectionExtensions
         {
             options.Limits.MaxRequestBodySize = 524_288_000; // if don't set default value is ~30 MB
         });
-        services.Configure<PublicAppSettingsOptions>(configuration.GetSection(PublicAppSettingsOptions.SectionName));
+        services.Configure<StorageSettingsOptions>(configuration.GetSection(StorageSettingsOptions.SectionName));
     }
 
     public static void AddAppServices(this IServiceCollection services)
