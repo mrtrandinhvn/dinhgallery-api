@@ -1,6 +1,6 @@
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
 
-public interface IGalleryFileRepository
+public interface IGalleryFileWriteRepository
 {
     Task<bool> AddAsync(GalleryFileAddInput input);
 }

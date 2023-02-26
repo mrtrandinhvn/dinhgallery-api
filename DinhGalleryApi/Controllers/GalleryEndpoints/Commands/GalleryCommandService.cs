@@ -9,16 +9,16 @@ public class GalleryCommandService : IGalleryCommandService
 {
     private const string _galleryPath = "/home/www/gallery/";
     private readonly FtpClientFactory _ftpClientFactory;
-    private readonly IGalleryFolderRepository _folderRepository;
-    private readonly IGalleryFileRepository _fileRepository;
+    private readonly IGalleryFolderWriteRepository _folderRepository;
+    private readonly IGalleryFileWriteRepository _fileRepository;
     private readonly StorageSettingsOptions _storageSettings;
     private readonly ILogger<GalleryCommandService> _logger;
 
     public GalleryCommandService(
         ILogger<GalleryCommandService> logger,
         FtpClientFactory ftpClientFactory,
-        IGalleryFolderRepository folderRepository,
-        IGalleryFileRepository fileRepository,
+        IGalleryFolderWriteRepository folderRepository,
+        IGalleryFileWriteRepository fileRepository,
         IOptions<StorageSettingsOptions> storageSettingsOptions)
     {
         _logger = logger;
@@ -47,14 +47,15 @@ public class GalleryCommandService : IGalleryCommandService
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(input.FormFiles);
+        Guid physicalFolderName = Guid.NewGuid();
         Guid folderId = Guid.NewGuid();
 
         using (var ftpClient = _ftpClientFactory.GetClient())
         {
             await ftpClient.AutoConnectAsync();
             await ftpClient.SetWorkingDirectoryAsync(_galleryPath);
-            await ftpClient.CreateDirectoryAsync(folderId.ToString());
-            await ftpClient.SetWorkingDirectoryAsync(_galleryPath + folderId + "/");
+            await ftpClient.CreateDirectoryAsync(physicalFolderName.ToString());
+            await ftpClient.SetWorkingDirectoryAsync(_galleryPath + physicalFolderName + "/");
             foreach (IFormFile file in input.FormFiles)
             {
                 if (file.Length > 0)
@@ -72,7 +73,7 @@ public class GalleryCommandService : IGalleryCommandService
                                 Id = fileId,
                                 FolderId = folderId,
                                 DisplayName = file.FileName,
-                                DownloadUrl = new Uri($"{_storageSettings.StorageServiceBaseUrl}/gallery/{folderId}/{physicalFileName}"),
+                                DownloadUri = new Uri($"{_storageSettings.StorageServiceBaseUrl}/gallery/{physicalFolderName}/{physicalFileName}"),
                             });
                             await Task.WhenAll(saveToStorageTask, saveToDbTask);
                         }
@@ -89,7 +90,7 @@ public class GalleryCommandService : IGalleryCommandService
         await _folderRepository.AddAsync(new GalleryFolderAddInput
         {
             Id = folderId,
-            DisplayName = input.FolderDisplayName ?? folderId.ToString(),
+            DisplayName = input.FolderDisplayName ?? physicalFolderName.ToString(),
         });
 
         return folderId;

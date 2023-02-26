@@ -3,11 +3,11 @@ using StackExchange.Redis;
 
 namespace dinhgallery_api.Infrastructures.Repositories;
 
-public class GalleryFolderRepository : IGalleryFolderRepository
+public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
 {
     private readonly IConnectionMultiplexer _redis;
 
-    public GalleryFolderRepository(IConnectionMultiplexer redis)
+    public GalleryFolderWriteRepository(IConnectionMultiplexer redis)
     {
         _redis = redis;
     }

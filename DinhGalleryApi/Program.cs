@@ -54,7 +54,7 @@ services.AddAuthorization(options =>
 });
 services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
 services.ConfigureOptions(builder.Configuration);
-services.AddAppServices();
+services.ConfigureAppServices(builder.Configuration);
 const string AllowedOrigins = "AllowedOrigins";
 services.AddCors(options =>
 {
@@ -71,12 +71,6 @@ services.AddCors(options =>
             .WithHeaders("Authorization");
     });
 });
-services.AddSingleton<IConnectionMultiplexer>(sp =>
-{
-    return ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"));
-});
-services.AddScoped<IGalleryFolderRepository, GalleryFolderRepository>();
-services.AddScoped<IGalleryFileRepository, GalleryFileRepository>();
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

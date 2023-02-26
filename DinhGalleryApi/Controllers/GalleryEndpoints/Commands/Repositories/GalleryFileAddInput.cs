@@ -4,7 +4,7 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories
     {
         public Guid Id { get; set; }
         public Guid FolderId { get; set; }
-        public string? DisplayName { get; set; }
-        public Uri? DownloadUrl { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public Uri? DownloadUri { get; set; }
     }
 }

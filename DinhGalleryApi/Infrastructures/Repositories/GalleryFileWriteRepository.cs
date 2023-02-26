@@ -3,11 +3,11 @@ using StackExchange.Redis;
 
 namespace dinhgallery_api.Infrastructures.Repositories;
 
-public class GalleryFileRepository : IGalleryFileRepository
+public class GalleryFileWriteRepository : IGalleryFileWriteRepository
 {
     private readonly IConnectionMultiplexer _redis;
 
-    public GalleryFileRepository(IConnectionMultiplexer redis)
+    public GalleryFileWriteRepository(IConnectionMultiplexer redis)
     {
         _redis = redis;
     }
@@ -16,6 +16,7 @@ public class GalleryFileRepository : IGalleryFileRepository
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(input.DisplayName);
+        ArgumentNullException.ThrowIfNull(input.DownloadUri);
 
         IDatabase db = _redis.GetDatabase();
         var now = DateTime.UtcNow;
@@ -23,6 +24,7 @@ public class GalleryFileRepository : IGalleryFileRepository
             new HashEntry("displayName", input.DisplayName),
             new HashEntry("createdAtUtc", now.ToString("o")),
             new HashEntry("folderId", input.FolderId.ToString()),
+            new HashEntry("downloadUri", input.DownloadUri.ToString()),
         });
         var linkWithFolderTask = db.SortedSetAddAsync($"files:{input.FolderId}", input.Id.ToString(), now.Ticks);
         await Task.WhenAll(saveFileTask, linkWithFolderTask);
