@@ -67,15 +67,17 @@ public class GalleryCommandService : IGalleryCommandService
                         using (MemoryStream fileStream = new())
                         {
                             await file.CopyToAsync(fileStream);
-                            var saveToStorageTask = ftpClient.UploadBytesAsync(fileStream.ToArray(), physicalFileName);
-                            var saveToDbTask = _fileRepository.AddAsync(new GalleryFileAddInput
+                            Task saveToStorageTask = ftpClient.UploadBytesAsync(fileStream.ToArray(), physicalFileName);
+                            Task saveToDbTask = _fileRepository.AddAsync(new GalleryFileAddInput
                             {
                                 Id = fileId,
                                 FolderId = folderId,
                                 DisplayName = file.FileName,
                                 DownloadUri = new Uri($"{_storageSettings.StorageServiceBaseUrl}/gallery/{physicalFolderName}/{physicalFileName}"),
                             });
-                            await Task.WhenAll(saveToStorageTask, saveToDbTask);
+                            await Task.WhenAll(
+                                saveToStorageTask,
+                                saveToDbTask);
                         }
                     }
                     catch (Exception ex)

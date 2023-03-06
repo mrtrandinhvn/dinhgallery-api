@@ -2,7 +2,6 @@ using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Options;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
-using FluentFTP;
 using Microsoft.Extensions.Options;
 
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries;
@@ -24,12 +23,12 @@ public class GalleryQueryService : IGalleryQueryService
         this._queryRepository = queryRepository;
     }
 
-    public Task<FileDetailsReadModel> GetFileDetailsAsync(Guid fileId)
+    public Task<FileDetailsReadModel?> GetFileDetailsAsync(Guid fileId)
     {
         return _queryRepository.GetFileDetailsAsync(fileId);
     }
 
-    public Task<FolderDetailsReadModel> GetFolderDetailsAsync(Guid folderId)
+    public Task<FolderDetailsReadModel?> GetFolderDetailsAsync(Guid folderId)
     {
         return _queryRepository.GetFolderDetailsAsync(folderId);
     }

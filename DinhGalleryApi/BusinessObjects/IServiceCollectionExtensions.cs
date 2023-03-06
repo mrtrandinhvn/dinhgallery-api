@@ -24,14 +24,22 @@ public static class IServiceCollectionExtensions
             options.Limits.MaxRequestBodySize = 524_288_000; // if don't set default value is ~30 MB
         });
         services.Configure<StorageSettingsOptions>(configuration.GetSection(StorageSettingsOptions.SectionName));
-        services.Configure<HashSettingsOptions>(configuration.GetSection(HashSettingsOptions.SectionName));
     }
 
     public static void ConfigureAppServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            return ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis"));
+            RedisOptions redisOptions = new();
+            configuration.GetSection(RedisOptions.SectionName).Bind(redisOptions);
+            ArgumentNullException.ThrowIfNull(redisOptions.Host);
+            ArgumentNullException.ThrowIfNull(redisOptions.Port);
+            ArgumentNullException.ThrowIfNull(redisOptions.Password);
+            return ConnectionMultiplexer.Connect(new ConfigurationOptions
+            {
+                EndPoints = { redisOptions.Host + ":" + redisOptions.Port },
+                Password = redisOptions.Password,
+            });
         });
 
         services.AddScoped<FtpClientFactory>();

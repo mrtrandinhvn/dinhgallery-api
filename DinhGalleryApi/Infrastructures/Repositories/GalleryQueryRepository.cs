@@ -12,23 +12,32 @@ public class GalleryQueryRepository : IGalleryQueryRepository
         _redis = redis;
     }
 
-    public Task<FileDetailsReadModel> GetFileDetailsAsync(Guid fileId)
+    public Task<FileDetailsReadModel?> GetFileDetailsAsync(Guid fileId)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<FolderDetailsReadModel> GetFolderDetailsAsync(Guid folderId)
+    public async Task<FolderDetailsReadModel?> GetFolderDetailsAsync(Guid folderId)
     {
         IDatabase db = _redis.GetDatabase();
-        FolderDetailsReadModel result = MapHashEntryToFolderDetails(new FolderDetailsReadModel(), await db.HashGetAllAsync($"folder:{folderId}"));
+        HashEntry[] folderEntries = await db.HashGetAllAsync($"folder:{folderId}");
+        if (folderEntries.Length == 0)
+        {
+            return null;
+        }
+
+        FolderDetailsReadModel result = MapHashEntryToFolderDetails(new FolderDetailsReadModel(), folderEntries);
         var folderFileIds = await db.SortedSetRangeByScoreAsync($"files:{folderId}");
         List<Task<HashEntry[]>> getFileDetailsTasks = new();
         foreach (var fileId in folderFileIds)
         {
             getFileDetailsTasks.Add(db.HashGetAllAsync($"file:{fileId}"));
         }
+
         HashEntry[][] fileDetails = await Task.WhenAll(getFileDetailsTasks);
-        result.Files = fileDetails.Select((entries, i) =>
+        result.Files = fileDetails
+        .Where(entries => entries.Length > 0)
+        .Select((entries, i) =>
         {
             FileDetailsReadModel fileReadModel = new()
             {

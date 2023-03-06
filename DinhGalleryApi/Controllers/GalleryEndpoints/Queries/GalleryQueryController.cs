@@ -25,7 +25,7 @@ public class GalleryQueryController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [Route("folder/{id}")]
-    public Task<FolderDetailsReadModel> GetFolderDetails(Guid id)
+    public Task<FolderDetailsReadModel?> GetFolderDetails(Guid id)
     {
         return _service.GetFolderDetailsAsync(id);
     }
@@ -33,7 +33,7 @@ public class GalleryQueryController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [Route("file/{id}")]
-    public Task<FileDetailsReadModel> GetFileDetails(Guid id)
+    public Task<FileDetailsReadModel?> GetFileDetails(Guid id)
     {
         return _service.GetFileDetailsAsync(id);
     }
