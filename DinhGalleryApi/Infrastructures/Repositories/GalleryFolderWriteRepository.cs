@@ -1,28 +1,55 @@
 using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
-using StackExchange.Redis;
+using dinhgallery_api.DbModels;
+using Newtonsoft.Json;
+using Redis.OM;
+using Redis.OM.Searching;
 
 namespace dinhgallery_api.Infrastructures.Repositories;
 
 public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
 {
-    private readonly IConnectionMultiplexer _redis;
+    private readonly RedisConnectionProvider _redis;
+    private readonly ILogger<GalleryFolderWriteRepository> _logger;
 
-    public GalleryFolderWriteRepository(IConnectionMultiplexer redis)
+    public GalleryFolderWriteRepository(
+        RedisConnectionProvider redis,
+        ILogger<GalleryFolderWriteRepository> logger)
     {
         _redis = redis;
+        _logger = logger;
     }
 
-    public async Task<bool> AddAsync(GalleryFolderAddInput input)
+    public async Task<Ulid?> AddAsync(GalleryFolderAddInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(input.DisplayName);
 
-        IDatabase db = _redis.GetDatabase();
-        await db.HashSetAsync($"folder:{input.Id}", new HashEntry[]{
-            new HashEntry("displayName", input.DisplayName),
-            new HashEntry("createdAtUtc", DateTime.UtcNow.ToString("o")),
-        });
+        var now = DateTime.UtcNow;
+        IRedisCollection<FolderDbModel> folders = _redis.RedisCollection<FolderDbModel>();
+        FolderDbModel entity = new()
+        {
+            DisplayName = input.DisplayName,
+            CreatedAtUtc = DateTime.UtcNow,
+            PhysicalFolderName = input.PhysicalName,
+        };
+        try
+        {
+            await folders.InsertAsync(entity);
+            return entity.Id;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to save folder to db. input: {JsonConvert.SerializeObject(input)}.");
+            return null;
+        }
+    }
 
+    public async Task<bool> DeleteAsync(Ulid folderId)
+    {
+        string key = $"{FolderDbModel.TableName}:{folderId}";
+        _logger.LogInformation($"Begin deleting key '{key}'");
+        var result = await _redis.Connection.UnlinkAsync(key);
+        _logger.LogInformation($"Finish deleting key '{key}'. Result is '{result}'.");
         return true;
     }
 }

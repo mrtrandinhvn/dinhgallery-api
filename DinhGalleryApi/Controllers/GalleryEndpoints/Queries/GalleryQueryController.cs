@@ -1,4 +1,5 @@
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
+using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,16 +9,15 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries;
 [Route("gallery")]
 public class GalleryQueryController : ControllerBase
 {
-    private readonly IGalleryQueryService _service;
+    private readonly IGalleryQueryRepository _service;
 
-    public GalleryQueryController(IGalleryQueryService service)
+    public GalleryQueryController(IGalleryQueryRepository service)
     {
         _service = service;
     }
 
     [HttpGet]
-    [Route("folder")]
-    public Task<List<Guid>> GetFolderList()
+    public Task<List<FolderDetailsReadModel>> GetFolderList()
     {
         return _service.GetFolderListAsync();
     }
@@ -25,7 +25,7 @@ public class GalleryQueryController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [Route("folder/{id}")]
-    public Task<FolderDetailsReadModel?> GetFolderDetails(Guid id)
+    public Task<FolderDetailsReadModel?> GetFolderDetails(Ulid id)
     {
         return _service.GetFolderDetailsAsync(id);
     }
@@ -33,8 +33,9 @@ public class GalleryQueryController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [Route("file/{id}")]
-    public Task<FileDetailsReadModel?> GetFileDetails(Guid id)
+    public async Task<FileDetailsResponse?> GetFileDetails(Ulid id)
     {
-        return _service.GetFileDetailsAsync(id);
+        FileDetailsReadModel? fileDetails = await _service.GetFileDetailsAsync(id);
+        return fileDetails == null ? null : new FileDetailsResponse(fileDetails);
     }
 }

@@ -1,100 +1,112 @@
-using dinhgallery_api.BusinessObjects;
-using dinhgallery_api.BusinessObjects.Options;
 using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
-using Microsoft.Extensions.Options;
+using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
+using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
 
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 
 public class GalleryCommandService : IGalleryCommandService
 {
-    private const string _galleryPath = "/home/www/gallery/";
-    private readonly FtpClientFactory _ftpClientFactory;
+    private readonly ILogger<GalleryCommandService> _logger;
     private readonly IGalleryFolderWriteRepository _folderRepository;
     private readonly IGalleryFileWriteRepository _fileRepository;
-    private readonly StorageSettingsOptions _storageSettings;
-    private readonly ILogger<GalleryCommandService> _logger;
+    private readonly IStorageService _storageService;
+    private readonly IGalleryQueryRepository _queryRepository;
 
     public GalleryCommandService(
         ILogger<GalleryCommandService> logger,
-        FtpClientFactory ftpClientFactory,
         IGalleryFolderWriteRepository folderRepository,
         IGalleryFileWriteRepository fileRepository,
-        IOptions<StorageSettingsOptions> storageSettingsOptions)
+        IGalleryQueryRepository queryRepository,
+        IStorageService storageService)
     {
         _logger = logger;
-        _ftpClientFactory = ftpClientFactory;
         _folderRepository = folderRepository;
+        _storageService = storageService;
         _fileRepository = fileRepository;
-        _storageSettings = storageSettingsOptions.Value;
+        _queryRepository = queryRepository;
     }
 
-    public async Task<bool> DeleteAsync(string fileId)
+    public async Task<bool> DeleteFileAsync(Ulid fileId)
     {
-        using (var ftpClient = _ftpClientFactory.GetClient())
+        _logger.LogInformation($"Begin DeleteFileAsync with fileId: {fileId}.");
+        _logger.LogInformation($"Looking for file details in db. fileId: {fileId}.");
+        FileDetailsReadModel? fileDetails = await _queryRepository.GetFileDetailsAsync(fileId);
+        if (fileDetails == null)
         {
-            await ftpClient.AutoConnectAsync();
-            await ftpClient.SetWorkingDirectoryAsync(_galleryPath);
-            if (await ftpClient.FileExistsAsync(fileId))
-            {
-                await ftpClient.DeleteFileAsync(fileId);
-            }
-
+            _logger.LogInformation($"Couldn't find file in db. fileId: {fileId}.");
             return true;
         }
+
+        FolderDetailsReadModel? folderDetails = await _queryRepository.GetFolderDetailsAsync(fileDetails.FolderId);
+        if (await _storageService.DeleteFileAsync(fileDetails.DownloadUri!))
+        {
+            await _fileRepository.DeleteAsync(fileId);
+        }
+
+        if (folderDetails != null && folderDetails.Files.Count() <= 1)
+        {
+            // delete the folder if this is the last file
+            if (await _storageService.DeleteFolderAsync(folderDetails.PhysicalName))
+            {
+                await _folderRepository.DeleteAsync(folderDetails.Id);
+            }
+        }
+
+        return true;
     }
 
-    public async Task<Guid> SaveFilesAsync(SaveFilesInput input)
+    public async Task<bool> DeleteFolderAsync(Ulid folderId)
+    {
+        FolderDetailsReadModel? folder = await _queryRepository.GetFolderDetailsAsync(folderId);
+        if (folder == null)
+        {
+            return true;
+        }
+
+        if (!await _storageService.DeleteFolderAsync(folder.PhysicalName))
+        {
+            return false;
+        }
+
+        List<Task<bool>> deleteDbTasks = new();
+        foreach (FileDetailsReadModel file in folder.Files)
+        {
+            deleteDbTasks.Add(_fileRepository.DeleteAsync(file.Id));
+        }
+        deleteDbTasks.Add(_folderRepository.DeleteAsync(folderId));
+
+        bool[] deleteResults = await Task.WhenAll(deleteDbTasks);
+        return deleteResults.All(x => x);
+    }
+
+    public async Task<Ulid?> SaveFilesAsync(SaveFilesInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(input.FormFiles);
-        Guid physicalFolderName = Guid.NewGuid();
-        Guid folderId = Guid.NewGuid();
-
-        using (var ftpClient = _ftpClientFactory.GetClient())
+        string physicalFolderName = Guid.NewGuid().ToString();
+        GalleryFolderAddInput folder = new GalleryFolderAddInput
         {
-            await ftpClient.AutoConnectAsync();
-            await ftpClient.SetWorkingDirectoryAsync(_galleryPath);
-            await ftpClient.CreateDirectoryAsync(physicalFolderName.ToString());
-            await ftpClient.SetWorkingDirectoryAsync(_galleryPath + physicalFolderName + "/");
-            foreach (IFormFile file in input.FormFiles)
+            DisplayName = input.FolderDisplayName ?? physicalFolderName,
+            PhysicalName = physicalFolderName,
+        };
+
+        Ulid? folderId = await _folderRepository.AddAsync(folder);
+        if (folderId.HasValue)
+        {
+            List<GalleryFileAddInput> savedFiles = await _storageService.SaveAsync(physicalFolderName, input.FormFiles);
+            List<Task<Ulid?>> saveFileTasks = new();
+            foreach (GalleryFileAddInput savedFile in savedFiles)
             {
-                if (file.Length > 0)
-                {
-                    Guid fileId = Guid.NewGuid();
-                    string physicalFileName = fileId.ToString() + Path.GetExtension(file.FileName);
-                    try
-                    {
-                        using (MemoryStream fileStream = new())
-                        {
-                            await file.CopyToAsync(fileStream);
-                            Task saveToStorageTask = ftpClient.UploadBytesAsync(fileStream.ToArray(), physicalFileName);
-                            Task saveToDbTask = _fileRepository.AddAsync(new GalleryFileAddInput
-                            {
-                                Id = fileId,
-                                FolderId = folderId,
-                                DisplayName = file.FileName,
-                                DownloadUri = new Uri($"{_storageSettings.StorageServiceBaseUrl}/gallery/{physicalFolderName}/{physicalFileName}"),
-                            });
-                            await Task.WhenAll(
-                                saveToStorageTask,
-                                saveToDbTask);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"Error while saving '{file.FileName}'.");
-                        continue;
-                    }
-                }
+                savedFile.FolderId = folderId.Value;
+                saveFileTasks.Add(_fileRepository.AddAsync(savedFile));
             }
+
+            await Task.WhenAll(saveFileTasks);
+            return folderId.Value;
         }
 
-        await _folderRepository.AddAsync(new GalleryFolderAddInput
-        {
-            Id = folderId,
-            DisplayName = input.FolderDisplayName ?? physicalFolderName.ToString(),
-        });
-
-        return folderId;
+        // clean up storage if failed to save record to db
+        await _storageService.DeleteFolderAsync(folder.PhysicalName);
+        return null;
     }
 }

@@ -1,33 +1,55 @@
 using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
-using StackExchange.Redis;
+using dinhgallery_api.DbModels;
+using Newtonsoft.Json;
+using Redis.OM;
+using Redis.OM.Searching;
 
 namespace dinhgallery_api.Infrastructures.Repositories;
 
 public class GalleryFileWriteRepository : IGalleryFileWriteRepository
 {
-    private readonly IConnectionMultiplexer _redis;
+    private readonly RedisConnectionProvider _redis;
+    private readonly ILogger<GalleryFileWriteRepository> _logger;
 
-    public GalleryFileWriteRepository(IConnectionMultiplexer redis)
+    public GalleryFileWriteRepository(
+        RedisConnectionProvider redis,
+        ILogger<GalleryFileWriteRepository> logger)
     {
         _redis = redis;
+        _logger = logger;
     }
 
-    public async Task<bool> AddAsync(GalleryFileAddInput input)
+    public async Task<Ulid?> AddAsync(GalleryFileAddInput input)
     {
-        ArgumentNullException.ThrowIfNull(input);
-        ArgumentNullException.ThrowIfNull(input.DisplayName);
-        ArgumentNullException.ThrowIfNull(input.DownloadUri);
+        ArgumentNullException.ThrowIfNull(input?.DownloadUri);
 
-        IDatabase db = _redis.GetDatabase();
         var now = DateTime.UtcNow;
-        var saveFileTask = db.HashSetAsync($"file:{input.Id}", new HashEntry[]{
-            new HashEntry("displayName", input.DisplayName),
-            new HashEntry("createdAtUtc", now.ToString("o")),
-            new HashEntry("folderId", input.FolderId.ToString()),
-            new HashEntry("downloadUri", input.DownloadUri.ToString()),
-        });
-        var linkWithFolderTask = db.SortedSetAddAsync($"files:{input.FolderId}", input.Id.ToString(), now.Ticks);
-        await Task.WhenAll(saveFileTask, linkWithFolderTask);
+        IRedisCollection<FileDbModel> files = _redis.RedisCollection<FileDbModel>();
+        FileDbModel entity = new()
+        {
+            DisplayName = input.DisplayName,
+            CreatedAtUtc = DateTime.UtcNow,
+            DownloadUri = input.DownloadUri.ToString(),
+            FolderId = input.FolderId,
+        };
+        try
+        {
+            await files.InsertAsync(entity);
+            return entity.Id;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to save file to db. input: {JsonConvert.SerializeObject(input)}.");
+            return null;
+        }
+    }
+
+    public async Task<bool> DeleteAsync(Ulid id)
+    {
+        string key = $"{FileDbModel.TableName}:{id}";
+        _logger.LogInformation($"Begin deleting key '{key}'");
+        var result = await _redis.Connection.UnlinkAsync(key);
+        _logger.LogInformation($"Finish deleting key '{key}'. Result is '{result}'.");
         return true;
     }
 }

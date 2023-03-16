@@ -19,14 +19,21 @@ public class GalleryCommandControler : ControllerBase
     }
 
     [HttpDelete]
-    [Route("{fileName}")]
-    public Task<bool> Delete(string fileId)
+    [Route("file/{id}")]
+    public Task<bool> DeleteFile(Ulid id)
     {
-        return _commandService.DeleteAsync(fileId);
+        return _commandService.DeleteFileAsync(id);
+    }
+
+    [HttpDelete]
+    [Route("folder/{id}")]
+    public Task<bool> DeleteFolder(Ulid id)
+    {
+        return _commandService.DeleteFolderAsync(id);
     }
 
     [HttpPost]
-    public async Task<Guid> Post(string? folderDisplayName)
+    public async Task<Ulid?> Post(string? folderDisplayName)
     {
         var savedFolderId = (await _commandService.SaveFilesAsync(new SaveFilesInput
         {

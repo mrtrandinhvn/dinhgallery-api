@@ -1,100 +1,55 @@
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
-using StackExchange.Redis;
+using dinhgallery_api.DbModels;
+using Redis.OM;
 
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
 
 public class GalleryQueryRepository : IGalleryQueryRepository
 {
-    private readonly IConnectionMultiplexer _redis;
+    private readonly RedisConnectionProvider _redis;
 
-    public GalleryQueryRepository(IConnectionMultiplexer redis)
+    public GalleryQueryRepository(RedisConnectionProvider redis)
     {
         _redis = redis;
     }
 
-    public Task<FileDetailsReadModel?> GetFileDetailsAsync(Guid fileId)
+    public async Task<FileDetailsReadModel?> GetFileDetailsAsync(Ulid fileId)
     {
-        throw new NotImplementedException();
+        return (await _redis.RedisCollection<FileDbModel>()
+            .Where(x => x.Id == fileId)
+            .FirstOrDefaultAsync())
+            ?.ToReadModel();
     }
 
-    public async Task<FolderDetailsReadModel?> GetFolderDetailsAsync(Guid folderId)
+    public async Task<FolderDetailsReadModel?> GetFolderDetailsAsync(Ulid folderId)
     {
-        IDatabase db = _redis.GetDatabase();
-        HashEntry[] folderEntries = await db.HashGetAllAsync($"folder:{folderId}");
-        if (folderEntries.Length == 0)
+        var searchFolderTask = (await _redis.RedisCollection<FolderDbModel>()
+            .Where(x => x.Id == folderId)
+            .FirstOrDefaultAsync()
+            )?.ToReadModel();
+        var searchFilesTask = (await _redis.RedisCollection<FileDbModel>()
+            .Where(x => x.FolderId == folderId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ToListAsync()
+            ).Select(x => x.ToReadModel());
+
+        FolderDetailsReadModel? folder = searchFolderTask;
+        if (folder == null)
         {
             return null;
         }
 
-        FolderDetailsReadModel result = MapHashEntryToFolderDetails(new FolderDetailsReadModel(), folderEntries);
-        var folderFileIds = await db.SortedSetRangeByScoreAsync($"files:{folderId}");
-        List<Task<HashEntry[]>> getFileDetailsTasks = new();
-        foreach (var fileId in folderFileIds)
-        {
-            getFileDetailsTasks.Add(db.HashGetAllAsync($"file:{fileId}"));
-        }
-
-        HashEntry[][] fileDetails = await Task.WhenAll(getFileDetailsTasks);
-        result.Files = fileDetails
-        .Where(entries => entries.Length > 0)
-        .Select((entries, i) =>
-        {
-            FileDetailsReadModel fileReadModel = new()
-            {
-                Id = Guid.Parse(folderFileIds[i].ToString()),
-            };
-            MapHashEntryToFileDetails(fileReadModel, entries);
-            return fileReadModel;
-        })
-        .ToList();
-
-        return result;
+        folder.Files = searchFilesTask;
+        return folder;
     }
 
-    public Task<List<Guid>> GetFolderListAsync()
+    public async Task<List<FolderDetailsReadModel>> GetFolderListAsync()
     {
-        throw new NotImplementedException();
-    }
-
-    private static FolderDetailsReadModel MapHashEntryToFolderDetails(FolderDetailsReadModel seed, IEnumerable<HashEntry> entries)
-    {
-        foreach (HashEntry entry in entries)
-        {
-            switch (entry.Name)
-            {
-                case "displayName":
-                    seed.DisplayName = entry.Value.ToString();
-                    break;
-
-                case "createdAtUtc":
-                    seed.CreatedAtUtc = DateTime.Parse(entry.Value.ToString()).ToUniversalTime();
-                    break;
-            }
-        }
-
-        return seed;
-    }
-
-    private static FileDetailsReadModel MapHashEntryToFileDetails(FileDetailsReadModel seed, IEnumerable<HashEntry> entries)
-    {
-        foreach (HashEntry entry in entries)
-        {
-            switch (entry.Name)
-            {
-                case "displayName":
-                    seed.DisplayName = entry.Value.ToString();
-                    break;
-
-                case "createdAtUtc":
-                    seed.CreatedAtUtc = DateTime.Parse(entry.Value.ToString()).ToUniversalTime();
-                    break;
-
-                case "downloadUri":
-                    seed.DownloadUri = new Uri(entry.Value.ToString());
-                    break;
-            }
-        }
-
-        return seed;
+        return (await _redis.RedisCollection<FolderDbModel>()
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Take(10)
+            .ToListAsync())
+            .Select(x => x.ToReadModel())
+            .ToList();
     }
 }

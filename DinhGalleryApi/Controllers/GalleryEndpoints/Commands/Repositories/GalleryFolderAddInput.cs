@@ -2,7 +2,7 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories
 {
     public class GalleryFolderAddInput
     {
-        public string? DisplayName { get; set; }
-        public Guid Id { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public string PhysicalName { get; set; } = string.Empty;
     }
 }

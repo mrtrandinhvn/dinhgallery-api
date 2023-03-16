@@ -1,13 +1,10 @@
 using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Constants;
-using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
-using dinhgallery_api.Infrastructures.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
-using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +52,7 @@ services.AddAuthorization(options =>
 services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
 services.ConfigureOptions(builder.Configuration);
 services.ConfigureAppServices(builder.Configuration);
+services.ConfigureHostedServices();
 const string AllowedOrigins = "AllowedOrigins";
 services.AddCors(options =>
 {
