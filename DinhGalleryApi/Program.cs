@@ -79,7 +79,6 @@ if (app.Environment.IsDevelopment())
     IdentityModelEventSource.ShowPII = true;
 }
 
-app.UseHttpsRedirection();
 app.UseCors(AllowedOrigins);
 app.UseAuthentication();
 app.UseAuthorization();
