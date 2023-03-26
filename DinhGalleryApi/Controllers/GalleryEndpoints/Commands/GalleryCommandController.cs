@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,12 +34,12 @@ public class GalleryCommandControler : ControllerBase
     }
 
     [HttpPost]
-    public async Task<Ulid?> Post(string? folderDisplayName)
+    public async Task<Ulid?> Post([FromForm][StringLength(250)] string? folderDisplayName, [FromForm] List<IFormFile> files)
     {
         var savedFolderId = (await _commandService.SaveFilesAsync(new SaveFilesInput
         {
             FolderDisplayName = folderDisplayName,
-            FormFiles = Request.Form.Files,
+            FormFiles = files,
         }));
 
         return savedFolderId;

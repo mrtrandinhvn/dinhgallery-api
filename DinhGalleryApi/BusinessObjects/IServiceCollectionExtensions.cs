@@ -15,16 +15,18 @@ namespace dinhgallery_api.BusinessObjects;
 
 public static class IServiceCollectionExtensions
 {
+    private const int MAX_REQUEST_BODY_SIZE = 1024 * 1000000;
+
     public static void ConfigureOptions(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<FormOptions>(options =>
         {
-            // Set the limit to 500 MB
-            options.MultipartBodyLengthLimit = 524_288_000;
+            // Set the limit to X MB
+            options.MultipartBodyLengthLimit = MAX_REQUEST_BODY_SIZE;
         });
         services.Configure<KestrelServerOptions>(options =>
         {
-            options.Limits.MaxRequestBodySize = 524_288_000; // if don't set default value is ~30 MB
+            options.Limits.MaxRequestBodySize = MAX_REQUEST_BODY_SIZE; // if don't set default value is ~30 MB
         });
         services.Configure<StorageSettingsOptions>(configuration.GetSection(StorageSettingsOptions.SectionName));
     }

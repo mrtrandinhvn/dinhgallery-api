@@ -77,7 +77,7 @@ public class StorageService : IStorageService
         }
     }
 
-    public async Task<List<GalleryFileAddInput>> SaveAsync(string physicalFolderName, IFormFileCollection formFiles)
+    public async Task<List<GalleryFileAddInput>> SaveAsync(string physicalFolderName, IEnumerable<IFormFile> formFiles)
     {
         List<GalleryFileAddInput> addedFiles = new();
         using (var ftpClient = _ftpClientFactory.GetClient())
