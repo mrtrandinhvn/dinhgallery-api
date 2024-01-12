@@ -2,6 +2,7 @@ using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
@@ -58,7 +59,7 @@ services.AddCors(options =>
 {
     options.AddPolicy(name: AllowedOrigins, policy =>
     {
-        string[] allowedOrigins = builder.Configuration["AllowedOrigins"]
+        string[] allowedOrigins = builder.Configuration["AllowedOrigins"]!
             .Split(';')
             .Where(x => !string.IsNullOrEmpty(x))
             .Select(x => x.Trim())
@@ -80,6 +81,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(AllowedOrigins);
+app.UseStaticFiles(new StaticFileOptions
+{
+    // /storage is where we store all the uploaded files
+    FileProvider = new PhysicalFileProvider(
+           Path.Combine(builder.Environment.ContentRootPath, "storage")),
+    RequestPath = "/storage",
+});
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -47,8 +47,6 @@ public static class IServiceCollectionExtensions
             });
         });
 
-        services.AddScoped<FtpClientFactory>();
-
         services.AddScoped<IGalleryCommandService, GalleryCommandService>();
         services.AddScoped<IGalleryQueryService, GalleryQueryService>();
         services.AddScoped<IGalleryFolderWriteRepository, GalleryFolderWriteRepository>();
@@ -56,7 +54,7 @@ public static class IServiceCollectionExtensions
 
         services.AddScoped<IGalleryQueryRepository, GalleryQueryRepository>();
         services.AddScoped<IGalleryQueryService, GalleryQueryService>();
-        services.AddScoped<IStorageService, StorageService>();
+        services.AddScoped<IStorageService, FileSystemStorageService>();
     }
 
     public static void ConfigureHostedServices(this IServiceCollection services)

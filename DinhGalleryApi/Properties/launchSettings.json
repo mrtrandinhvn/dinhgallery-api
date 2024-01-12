@@ -1,0 +1,21 @@
+{
+  "profiles": {
+    "dinhgallery-api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:58086;http://localhost:58087"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": false,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "DockerfileRunArguments": "--env-file c:/personal/gallery/env.local -v //c/personal/gallery/storage:/app/storage",
+      "publishAllPorts": true,
+      "httpPort": 32776,
+      "useSSL": false
+    }
+  }
+}
