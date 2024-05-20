@@ -83,10 +83,11 @@ if (app.Environment.IsDevelopment())
 app.UseCors(AllowedOrigins);
 app.UseStaticFiles(new StaticFileOptions
 {
+    ServeUnknownFileTypes = true,
     // /storage is where we store all the uploaded files
+    RequestPath = "/storage",
     FileProvider = new PhysicalFileProvider(
            Path.Combine(builder.Environment.ContentRootPath, "storage")),
-    RequestPath = "/storage",
 });
 app.UseAuthentication();
 app.UseAuthorization();
