@@ -4,12 +4,12 @@ The **dinhgallery-api** is the backend service for the Dinh Gallery website (htt
 
 ## Overview
 
-This project runs a **.NET 8 Web API** inside a Docker container and is hosted on a Linux VPS. An **NGINX** reverse proxy sits in front of the API to handle routing and SSL.
+This project runs a **.NET 10 Web API** inside a Docker container and is hosted on a Linux VPS. An **NGINX** reverse proxy sits in front of the API to handle routing and SSL.
 
 ## Architecture & Technologies
 
 ### Runtime Environment
-- **.NET 8** Web API  
+- **.NET 10** Web API  
 - **Docker** container  
 - **Linux VPS** deployment  
 - **NGINX** reverse proxy for:
