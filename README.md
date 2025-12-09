@@ -1,15 +1,28 @@
 # dinhgallery-api
-Web api for https://gallery.dinhtran.page. Use Azure Active Directory for authentication.
 
-## Technologies
+The **dinhgallery-api** is the backend service for the Dinh Gallery website (https://gallery.dinhtran.page). It uses Azure Active Directory for secure sign-in and access control.
 
-### Environment
-- .NET 8 on linux Azure App Service.
+## Overview
+
+This project runs a **.NET 8 Web API** inside a Docker container and is hosted on a Linux VPS. An **NGINX** reverse proxy sits in front of the API to handle routing and SSL.
+
+## Architecture & Technologies
+
+### Runtime Environment
+- **.NET 8** Web API  
+- **Docker** container  
+- **Linux VPS** deployment  
+- **NGINX** reverse proxy for:
+  - Routing requests to the API  
+  - Managing HTTPS  
+  - Basic server-side handling
 
 ### Authentication & Authorization
-- Azure Active Directory.
-- MSAL 2.0.
-- Enterprise Application roles.
+- **Azure Active Directory**  
+- **MSAL 2.0**  
+- **Enterprise Application roles** for permission management
+
+
 
 ## Setup locally
 ### Launch with Docker
