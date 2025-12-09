@@ -1,4 +1,4 @@
 echo Make sure that docker is running first
-docker build -t dinhgalleryapi:1.1.4 -f ./DinhGalleryApi/Dockerfile .
-docker save dinhgalleryapi:1.1.4 > dinhgalleryapi_1.1.4.tar
+docker build -t dinhgalleryapi:2.0.0 -f ./DinhGalleryApi/Dockerfile .
+docker save dinhgalleryapi:2.0.0 > dinhgalleryapi_2.0.0.tar
 pause
