@@ -1,11 +1,10 @@
 using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Constants;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Logging;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,42 +13,42 @@ var services = builder.Services;
 services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 services.AddEndpointsApiExplorer();
+
+const string schemeId = "bearer";
 services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme.\r\n\r\n"
-        + "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n"
-        + "Example: 'Bearer access_token'",
+        Description = "JWT Authorization header using the bearer scheme.\r\n\r\n"
+        + "Enter 'bearer' [space] and then your token in the text input below.\r\n\r\n"
+        + "Example: 'bearer access_token'",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
-        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        Scheme = "bearer",
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement {
+    options.AddSecurityRequirement(document =>
+    {
+        var requirement = new OpenApiSecurityRequirement
         {
-          (new OpenApiSecurityScheme {
-                Reference = new OpenApiReference {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer",
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header,
-            }),
-            new List<string>()
-        }
+            {
+                new OpenApiSecuritySchemeReference(schemeId, document),
+                [] // no scopes for JWT
+            }
+        };
+
+        return requirement;
     });
 });
 
-services.AddAuthorization(options =>
-{
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .RequireRole(AppRole.Admin)
-        .Build();
-});
+services
+    .AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+    .RequireAuthenticatedUser()
+    .RequireRole(AppRole.Admin)
+    .Build());
+
 services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
 services.ConfigureOptions(builder.Configuration);
 services.ConfigureAppServices(builder.Configuration);

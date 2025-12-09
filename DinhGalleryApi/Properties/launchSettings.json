@@ -12,7 +12,7 @@
       "commandName": "Docker",
       "launchBrowser": false,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
-      "DockerfileRunArguments": "--env-file c:/personal/gallery/env.local -v //c/personal/gallery/storage:/app/storage",
+      "DockerfileRunArguments": "--env-file D:\\projects\\dinhgallery-api\\DinhGalleryApi\\Properties\\env.local -v //d/projects/dummies/dinhgallery-api/storage:/app/storage",
       "publishAllPorts": true,
       "httpPort": 32776,
       "useSSL": false
