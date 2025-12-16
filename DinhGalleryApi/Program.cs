@@ -93,4 +93,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Log after the application has started
+var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+var logger = loggerFactory.CreateLogger("dinhgallery_api");
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    logger.LogInformation("Application started. Environment: {Environment}; ContentRoot: {ContentRootPath}",
+        app.Environment.EnvironmentName, builder.Environment.ContentRootPath);
+});
+
 app.Run();
