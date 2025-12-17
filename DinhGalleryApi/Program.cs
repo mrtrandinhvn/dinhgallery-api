@@ -17,6 +17,8 @@ services.AddEndpointsApiExplorer();
 const string schemeId = "bearer";
 services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+
     options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the bearer scheme.\r\n\r\n"
@@ -28,17 +30,9 @@ services.AddSwaggerGen(options =>
         Scheme = "bearer",
     });
 
-    options.AddSecurityRequirement(document =>
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
-        var requirement = new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecuritySchemeReference(schemeId, document),
-                [] // no scopes for JWT
-            }
-        };
-
-        return requirement;
+        [new OpenApiSecuritySchemeReference(schemeId, document)] = []
     });
 });
 

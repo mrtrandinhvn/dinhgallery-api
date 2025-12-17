@@ -28,12 +28,12 @@ public class GalleryCommandService : IGalleryCommandService
 
     public async Task<bool> DeleteFileAsync(Ulid fileId)
     {
-        _logger.LogInformation($"Begin DeleteFileAsync with fileId: {fileId}.");
-        _logger.LogInformation($"Looking for file details in db. fileId: {fileId}.");
+        _logger.LogInformation("Begin DeleteFileAsync with fileId: {FileId}.", fileId);
+        _logger.LogInformation("Looking for file details in db. fileId: {FileId}.", fileId);
         FileDetailsReadModel? fileDetails = await _queryRepository.GetFileDetailsAsync(fileId);
         if (fileDetails == null)
         {
-            _logger.LogInformation($"Couldn't find file in db. fileId: {fileId}.");
+            _logger.LogInformation("Couldn't find file in db. fileId: {FileId}.", fileId);
             return true;
         }
 
@@ -83,30 +83,46 @@ public class GalleryCommandService : IGalleryCommandService
     {
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(input.FormFiles);
-        string physicalFolderName = Guid.NewGuid().ToString();
-        GalleryFolderAddInput folder = new()
-        {
-            DisplayName = input.FolderDisplayName ?? physicalFolderName,
-            PhysicalName = physicalFolderName,
-        };
 
-        Ulid? folderId = await _folderRepository.AddAsync(folder);
-        if (folderId.HasValue)
+        Ulid folderId;
+        string physicalFolderName;
+        FolderDetailsReadModel? existingFolder = input.FolderId.HasValue ? await _queryRepository.GetFolderDetailsAsync(input.FolderId.Value) : null;
+        if (existingFolder != null)
         {
-            List<GalleryFileAddInput> savedFiles = await _storageService.SaveAsync(physicalFolderName, input.FormFiles);
-            List<Task<Ulid?>> saveFileTasks = [];
-            foreach (GalleryFileAddInput savedFile in savedFiles)
+            _logger.LogInformation("Existing folder found: {FolderId}.", existingFolder.Id);
+            folderId = existingFolder.Id;
+            physicalFolderName = existingFolder.PhysicalName;
+        }
+        else
+        {
+            // Create a new folder
+            physicalFolderName = Guid.NewGuid().ToString();
+            Ulid? newFolderId = await _folderRepository.AddAsync(new()
             {
-                savedFile.FolderId = folderId.Value;
-                saveFileTasks.Add(_fileRepository.AddAsync(savedFile));
+                DisplayName = input.FolderDisplayName ?? physicalFolderName,
+                PhysicalName = physicalFolderName,
+            });
+
+            if (!newFolderId.HasValue)
+            {
+                return null; // Failed to create folder in database
             }
 
-            await Task.WhenAll(saveFileTasks);
-            return folderId.Value;
+            folderId = newFolderId.Value;
         }
 
-        // clean up storage if failed to save record to db
-        await _storageService.DeleteFolderAsync(folder.PhysicalName);
-        return null;
+        // Write files to storage
+        List<GalleryFileAddInput> savedFiles = await _storageService.SaveAsync(physicalFolderName, input.FormFiles);
+
+        // Save file records to database
+        List<Task<Ulid?>> persitFileTasks = [];
+        foreach (GalleryFileAddInput savedFile in savedFiles)
+        {
+            savedFile.FolderId = folderId;
+            persitFileTasks.Add(_fileRepository.AddAsync(savedFile));
+        }
+
+        await Task.WhenAll(persitFileTasks);
+        return folderId;
     }
 }

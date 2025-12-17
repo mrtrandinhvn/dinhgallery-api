@@ -6,12 +6,12 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 
 [ApiController]
 [Route("gallery")]
-public class GalleryCommandControler : ControllerBase
+public class GalleryCommandController : ControllerBase
 {
     private readonly IGalleryCommandService _commandService;
     private readonly IGalleryQueryService _queryService;
 
-    public GalleryCommandControler(
+    public GalleryCommandController(
         IGalleryCommandService commandService,
         IGalleryQueryService queryService)
     {
@@ -39,6 +39,19 @@ public class GalleryCommandControler : ControllerBase
         var savedFolderId = await _commandService.SaveFilesAsync(new SaveFilesInput
         {
             FolderDisplayName = folderDisplayName,
+            FormFiles = files,
+        });
+
+        return savedFolderId;
+    }
+
+    [HttpPost]
+    [Route("folder/{folderId}/files")]
+    public async Task<Ulid?> AddFilesToFolder(Ulid folderId, [FromForm] List<IFormFile> files)
+    {
+        var savedFolderId = await _commandService.SaveFilesAsync(new SaveFilesInput
+        {
+            FolderId = folderId,
             FormFiles = files,
         });
 
