@@ -36,11 +36,11 @@ public class GalleryCommandControler : ControllerBase
     [HttpPost]
     public async Task<Ulid?> Post([FromForm][StringLength(250)] string? folderDisplayName, [FromForm] List<IFormFile> files)
     {
-        var savedFolderId = (await _commandService.SaveFilesAsync(new SaveFilesInput
+        var savedFolderId = await _commandService.SaveFilesAsync(new SaveFilesInput
         {
             FolderDisplayName = folderDisplayName,
             FormFiles = files,
-        }));
+        });
 
         return savedFolderId;
     }

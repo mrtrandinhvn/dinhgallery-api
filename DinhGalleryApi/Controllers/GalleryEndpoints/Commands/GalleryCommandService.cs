@@ -84,7 +84,7 @@ public class GalleryCommandService : IGalleryCommandService
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(input.FormFiles);
         string physicalFolderName = Guid.NewGuid().ToString();
-        GalleryFolderAddInput folder = new GalleryFolderAddInput
+        GalleryFolderAddInput folder = new()
         {
             DisplayName = input.FolderDisplayName ?? physicalFolderName,
             PhysicalName = physicalFolderName,
@@ -94,7 +94,7 @@ public class GalleryCommandService : IGalleryCommandService
         if (folderId.HasValue)
         {
             List<GalleryFileAddInput> savedFiles = await _storageService.SaveAsync(physicalFolderName, input.FormFiles);
-            List<Task<Ulid?>> saveFileTasks = new();
+            List<Task<Ulid?>> saveFileTasks = [];
             foreach (GalleryFileAddInput savedFile in savedFiles)
             {
                 savedFile.FolderId = folderId.Value;
