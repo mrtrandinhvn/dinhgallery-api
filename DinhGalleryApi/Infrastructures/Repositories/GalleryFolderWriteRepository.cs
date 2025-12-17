@@ -39,7 +39,7 @@ public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to save folder to db. input: {JsonConvert.SerializeObject(input)}.");
+            _logger.LogError(ex, "Failed to save folder to db. input: {Input}.", JsonConvert.SerializeObject(input));
             return null;
         }
     }
@@ -47,9 +47,9 @@ public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
     public async Task<bool> DeleteAsync(Ulid folderId)
     {
         string key = $"{FolderDbModel.TableName}:{folderId}";
-        _logger.LogInformation($"Begin deleting key '{key}'");
+        _logger.LogInformation("Begin deleting key '{Key}'", key);
         var result = await _redis.Connection.UnlinkAsync(key);
-        _logger.LogInformation($"Finish deleting key '{key}'. Result is '{result}'.");
+        _logger.LogInformation("Finish deleting key '{Key}'. Result is '{Result}'.", key, result);
         return true;
     }
 }

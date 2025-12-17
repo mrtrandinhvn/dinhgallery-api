@@ -21,13 +21,13 @@ public class FileSystemStorageService : IStorageService
 
     public Task<bool> DeleteFileAsync(Uri absoluteUri)
     {
-        _logger.LogInformation($"Begin deleting file from storage. File uri: {absoluteUri}.");
+        _logger.LogInformation("Begin deleting file from storage. File uri: {FileUri}.", absoluteUri);
         try
         {
             string filePath = Path.GetFileName(absoluteUri.PathAndQuery);
             string fullPath = Path.Combine(Directory.GetCurrentDirectory(), _galleryPath, filePath);
 
-            _logger.LogInformation($"File path in storage: '{fullPath}'.");
+            _logger.LogInformation("File path in storage: '{FullPath}'.", fullPath);
             if (File.Exists(fullPath))
             {
                 _logger.LogInformation("File found. Prepare for deletion.");
@@ -38,21 +38,21 @@ public class FileSystemStorageService : IStorageService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to delete file: {absoluteUri.AbsolutePath}. Reason: {ex.Message}.");
+            _logger.LogError(ex, "Failed to delete file: {FilePath}. Reason: {Reason}.", absoluteUri.AbsolutePath, ex.Message);
             return Task.FromResult(false);
         }
     }
 
     public Task<bool> DeleteFolderAsync(string physicalFolderName)
     {
-        _logger.LogInformation($"About to delete folder {physicalFolderName}.");
+        _logger.LogInformation("About to delete folder {PhysicalFolderName}.", physicalFolderName);
         try
         {
             string fullPath = Path.Combine(Directory.GetCurrentDirectory(), _galleryPath, physicalFolderName);
 
             if (Directory.Exists(fullPath))
             {
-                _logger.LogInformation($"Folder found: \"{fullPath}\".");
+                _logger.LogInformation("Folder found: \"{FullPath}\".", fullPath);
                 Directory.Delete(fullPath, true);
             }
 
@@ -60,7 +60,7 @@ public class FileSystemStorageService : IStorageService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to delete folder: {physicalFolderName}. Reason: {ex.Message}.");
+            _logger.LogError(ex, "Failed to delete folder: {PhysicalFolderName}. Reason: {Reason}.", physicalFolderName, ex.Message);
             return Task.FromResult(false);
         }
     }
@@ -95,7 +95,7 @@ public class FileSystemStorageService : IStorageService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"Error while saving '{file.FileName}'. Reason: {ex.Message}.");
+                    _logger.LogError(ex, "Error while saving '{FileName}'. Reason: {Reason}.", file.FileName, ex.Message);
                     continue;
                 }
             }

@@ -28,10 +28,11 @@ public class GalleryFileWriteRepository : IGalleryFileWriteRepository
         FileDbModel entity = new()
         {
             DisplayName = input.DisplayName,
-            CreatedAtUtc = DateTime.UtcNow,
+            CreatedAtUtc = now,
             DownloadUri = input.DownloadUri.ToString(),
             FolderId = input.FolderId,
         };
+        
         try
         {
             await files.InsertAsync(entity);
@@ -39,7 +40,7 @@ public class GalleryFileWriteRepository : IGalleryFileWriteRepository
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Failed to save file to db. input: {JsonConvert.SerializeObject(input)}.");
+            _logger.LogError(ex, "Failed to save file to db. input: {Input}.", JsonConvert.SerializeObject(input));
             return null;
         }
     }
@@ -47,9 +48,9 @@ public class GalleryFileWriteRepository : IGalleryFileWriteRepository
     public async Task<bool> DeleteAsync(Ulid id)
     {
         string key = $"{FileDbModel.TableName}:{id}";
-        _logger.LogInformation($"Begin deleting key '{key}'");
+        _logger.LogInformation("Begin deleting key '{Key}'", key);
         var result = await _redis.Connection.UnlinkAsync(key);
-        _logger.LogInformation($"Finish deleting key '{key}'. Result is '{result}'.");
+        _logger.LogInformation("Finish deleting key '{Key}'. Result is '{Result}'.", key, result);
         return true;
     }
 }

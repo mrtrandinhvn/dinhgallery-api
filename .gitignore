@@ -354,3 +354,4 @@ Properties/launchSettings.json
 DinhGalleryApi/appsettings.Production.json
 /DinhGalleryApi/Properties/env.local
 *.tar
+/.claude/settings.local.json
