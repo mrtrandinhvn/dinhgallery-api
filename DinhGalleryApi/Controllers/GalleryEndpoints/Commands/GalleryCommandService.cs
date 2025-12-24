@@ -1,6 +1,7 @@
 using dinhgallery_api.Controllers.GalleryEndpoints.Commands.Repositories;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
+using dinhgallery_api.Infrastructures;
 
 namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
 
@@ -11,19 +12,22 @@ public class GalleryCommandService : IGalleryCommandService
     private readonly IGalleryFileWriteRepository _fileRepository;
     private readonly IStorageService _storageService;
     private readonly IGalleryQueryRepository _queryRepository;
+    private readonly IVideoProcessingService _videoProcessingService;
 
     public GalleryCommandService(
         ILogger<GalleryCommandService> logger,
         IGalleryFolderWriteRepository folderRepository,
         IGalleryFileWriteRepository fileRepository,
         IGalleryQueryRepository queryRepository,
-        IStorageService storageService)
+        IStorageService storageService,
+        IVideoProcessingService videoProcessingService)
     {
         _logger = logger;
         _folderRepository = folderRepository;
         _storageService = storageService;
         _fileRepository = fileRepository;
         _queryRepository = queryRepository;
+        _videoProcessingService = videoProcessingService;
     }
 
     public async Task<bool> DeleteFileAsync(Ulid fileId)
@@ -113,6 +117,27 @@ public class GalleryCommandService : IGalleryCommandService
 
         // Write files to storage
         List<GalleryFileAddInput> savedFiles = await _storageService.SaveAsync(physicalFolderName, input.FormFiles);
+
+        // Optimize videos for streaming (fixes iOS playback issues)
+        string folderPath = Path.Combine(Directory.GetCurrentDirectory(), "storage", physicalFolderName);
+        foreach (GalleryFileAddInput savedFile in savedFiles)
+        {
+            if (savedFile.DownloadUri == null)
+            {
+                continue;
+            }
+
+            // Extract physical file name from download URI
+            string fileName = Path.GetFileName(savedFile.DownloadUri.PathAndQuery);
+            string filePath = Path.Combine(folderPath, fileName);
+
+            // Process video files to move moov atom to beginning
+            if (_videoProcessingService.IsVideoFile(filePath))
+            {
+                _logger.LogInformation("Processing video file for streaming optimization: {FileName}.", fileName);
+                await _videoProcessingService.OptimizeForStreamingAsync(filePath);
+            }
+        }
 
         // Save file records to database
         List<Task<Ulid?>> persitFileTasks = [];

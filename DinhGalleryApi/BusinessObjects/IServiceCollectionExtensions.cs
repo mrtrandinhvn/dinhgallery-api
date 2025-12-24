@@ -55,6 +55,7 @@ public static class IServiceCollectionExtensions
         services.AddScoped<IGalleryQueryRepository, GalleryQueryRepository>();
         services.AddScoped<IGalleryQueryService, GalleryQueryService>();
         services.AddScoped<IStorageService, FileSystemStorageService>();
+        services.AddScoped<IVideoProcessingService, VideoProcessingService>();
     }
 
     public static void ConfigureHostedServices(this IServiceCollection services)
