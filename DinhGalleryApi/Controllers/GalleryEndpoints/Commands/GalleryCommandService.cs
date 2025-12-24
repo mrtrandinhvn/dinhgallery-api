@@ -100,7 +100,7 @@ public class GalleryCommandService : IGalleryCommandService
         else
         {
             // Create a new folder
-            physicalFolderName = Guid.NewGuid().ToString();
+            physicalFolderName = Ulid.NewUlid().ToString();
             Ulid? newFolderId = await _folderRepository.AddAsync(new()
             {
                 DisplayName = input.FolderDisplayName ?? physicalFolderName,
@@ -128,14 +128,14 @@ public class GalleryCommandService : IGalleryCommandService
             }
 
             // Extract physical file name from download URI
-            string fileName = Path.GetFileName(savedFile.DownloadUri.PathAndQuery);
-            string filePath = Path.Combine(folderPath, fileName);
+            string physicalFileName = Path.GetFileName(savedFile.DownloadUri.PathAndQuery);
+            string physicalFilePath = Path.Combine(folderPath, physicalFileName);
 
             // Process video files to move moov atom to beginning
-            if (_videoProcessingService.IsVideoFile(filePath))
+            if (_videoProcessingService.IsVideoFile(physicalFilePath))
             {
-                _logger.LogInformation("Processing video file for streaming optimization: {FileName}.", fileName);
-                await _videoProcessingService.OptimizeForStreamingAsync(filePath);
+                _logger.LogInformation("Processing video file for streaming optimization: {FileName}.", physicalFileName);
+                await _videoProcessingService.OptimizeForStreamingAsync(physicalFilePath);
             }
         }
 
