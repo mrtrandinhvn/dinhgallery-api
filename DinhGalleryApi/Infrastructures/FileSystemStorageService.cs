@@ -11,6 +11,14 @@ public class FileSystemStorageService : IStorageService
     private readonly ILogger<FileSystemStorageService> _logger;
     private readonly StorageSettingsOptions _storageSettings;
 
+    // Characters that can cause issues on Linux/Unix or in URLs
+    private static readonly char[] ProblematicCharacters =
+    {
+        '$', '`', '!', '&', ';', '(', ')', '[', ']', '{', '}',
+        '~', '#', '%', '?', '*', '<', '>', '|', ':', '"', '\\',
+        '\'' // single quote
+    };
+
     public FileSystemStorageService(
         IOptions<StorageSettingsOptions> options,
         ILogger<FileSystemStorageService> logger)
@@ -78,8 +86,8 @@ public class FileSystemStorageService : IStorageService
         {
             if (file.Length > 0)
             {
-                Guid fileId = Guid.NewGuid();
-                string physicalFileName = fileId.ToString() + Path.GetExtension(file.FileName);
+                // Sanitize filename to prevent security issues and compatibility problems
+                string physicalFileName = SanitizeFilename(file.FileName);
                 string physicalFilePath = Path.Combine(folderPath, physicalFileName);
                 try
                 {
@@ -102,5 +110,50 @@ public class FileSystemStorageService : IStorageService
         }
 
         return addedFiles;
+    }
+
+    /// <summary>
+    /// Sanitizes a filename by replacing problematic characters
+    /// </summary>
+    private static string SanitizeFilename(string filename)
+    {
+        if (string.IsNullOrWhiteSpace(filename))
+        {
+            return "unnamed";
+        }
+
+        // Extract filename without path
+        filename = Path.GetFileName(filename);
+
+        // Replace spaces with underscores for URL-friendliness
+        filename = filename.Replace(' ', '_');
+
+        // Replace problematic characters with underscores
+        foreach (char c in ProblematicCharacters)
+        {
+            filename = filename.Replace(c, '_');
+        }
+
+        // Remove leading dots to prevent hidden files
+        filename = filename.TrimStart('.');
+
+        // Remove leading dashes to prevent CLI flag confusion
+        filename = filename.TrimStart('-');
+
+        // If filename is empty after sanitization, use a default
+        if (string.IsNullOrWhiteSpace(filename) || filename == ".")
+        {
+            return "unnamed";
+        }
+
+        // Limit length to 200 characters (leave room for extensions)
+        if (filename.Length > 200)
+        {
+            string extension = Path.GetExtension(filename);
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(filename);
+            filename = nameWithoutExt.Substring(0, 200 - extension.Length) + extension;
+        }
+
+        return filename;
     }
 }
