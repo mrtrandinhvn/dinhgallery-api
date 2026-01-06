@@ -44,6 +44,33 @@ public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
         }
     }
 
+    public async Task<bool> UpdateAsync(UpdateFolderDisplayNameInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(input.DisplayName);
+
+        IRedisCollection<FolderDbModel> folders = _redis.RedisCollection<FolderDbModel>();
+        try
+        {
+            FolderDbModel? folder = await folders.FindByIdAsync(input.FolderId.ToString());
+            if (folder == null)
+            {
+                _logger.LogWarning("Folder not found with ID: {FolderId}.", input.FolderId);
+                return false;
+            }
+
+            folder.DisplayName = input.DisplayName;
+            await folders.UpdateAsync(folder);
+            _logger.LogInformation("Successfully updated folder display name. FolderId: {FolderId}, NewDisplayName: {DisplayName}.", input.FolderId, input.DisplayName);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update folder display name. input: {Input}.", JsonConvert.SerializeObject(input));
+            return false;
+        }
+    }
+
     public async Task<bool> DeleteAsync(Ulid folderId)
     {
         string key = $"{FolderDbModel.TableName}:{folderId}";

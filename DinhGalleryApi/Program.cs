@@ -60,7 +60,7 @@ services.AddCors(options =>
         policy
             .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
-            .WithHeaders("Authorization");
+            .AllowAnyHeader();
     });
 });
 

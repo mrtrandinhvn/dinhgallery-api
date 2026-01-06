@@ -30,6 +30,25 @@ public class GalleryCommandService : IGalleryCommandService
         _videoProcessingService = videoProcessingService;
     }
 
+    public async Task<bool> UpdateFolderDisplayNameAsync(Ulid folderId, string displayName)
+    {
+        _logger.LogInformation("Begin UpdateFolderDisplayNameAsync with folderId: {FolderId}, displayName: {DisplayName}.", folderId, displayName);
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            _logger.LogWarning("Display name cannot be empty. folderId: {FolderId}.", folderId);
+            return false;
+        }
+
+        UpdateFolderDisplayNameInput input = new()
+        {
+            FolderId = folderId,
+            DisplayName = displayName
+        };
+
+        return await _folderRepository.UpdateAsync(input);
+    }
+
     public async Task<bool> DeleteFileAsync(Ulid fileId)
     {
         _logger.LogInformation("Begin DeleteFileAsync with fileId: {FileId}.", fileId);
