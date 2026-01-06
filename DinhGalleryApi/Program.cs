@@ -87,7 +87,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/version", () => "2.2.2").AllowAnonymous();
+app.MapGet("/version", () => "2.3.0").AllowAnonymous();
 
 // Log after the application has started
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
