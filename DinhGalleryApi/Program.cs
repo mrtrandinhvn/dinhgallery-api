@@ -1,8 +1,8 @@
 using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Constants;
+using dinhgallery_api.Infrastructures.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi;
 
@@ -11,30 +11,32 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 var services = builder.Services;
 services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-services.AddEndpointsApiExplorer();
 
-const string schemeId = "bearer";
-services.AddSwaggerGen(options =>
+// Only configure Swagger in Development
+if (builder.Environment.IsDevelopment())
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+    services.AddEndpointsApiExplorer();
 
-    options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
+    const string schemeId = "bearer";
+    services.AddSwaggerGen(options =>
     {
-        Description = "JWT Authorization header using the bearer scheme.\r\n\r\n"
-        + "Enter 'bearer' [space] and then your token in the text input below.\r\n\r\n"
-        + "Example: 'bearer access_token'",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "bearer",
-    });
+        options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
 
-    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-    {
-        [new OpenApiSecuritySchemeReference(schemeId, document)] = []
+        options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
+        {
+            Description = "DEVELOPMENT MODE: Authentication is mocked. All requests are automatically authenticated as Admin user. No token required.",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.ApiKey,
+            Scheme = "bearer",
+        });
+
+        options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference(schemeId, document)] = []
+        });
     });
-});
+}
 
 services
     .AddAuthorizationBuilder()
@@ -43,7 +45,7 @@ services
     .RequireRole(AppRole.Admin)
     .Build());
 
-services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
+services.AddEnvironmentBasedAuthentication(builder.Configuration, builder.Environment);
 services.ConfigureOptions(builder.Configuration);
 services.ConfigureAppServices(builder.Configuration);
 services.ConfigureHostedServices();
