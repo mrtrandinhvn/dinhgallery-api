@@ -1,17 +1,19 @@
+using dinhgallery_api.BusinessObjects.Commands;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
-namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
+namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands.UpdateFolderDisplayName;
 
 [ApiController]
 [Route("gallery")]
 public class UpdateFolderDisplayNameController : ControllerBase
 {
-    private readonly IGalleryCommandService _commandService;
+    private readonly ICommandHandler<UpdateFolderDisplayNameCommand, bool> _handler;
 
-    public UpdateFolderDisplayNameController(IGalleryCommandService commandService)
+    public UpdateFolderDisplayNameController(
+        ICommandHandler<UpdateFolderDisplayNameCommand, bool> handler)
     {
-        _commandService = commandService;
+        _handler = handler;
     }
 
     /// <summary>
@@ -21,7 +23,13 @@ public class UpdateFolderDisplayNameController : ControllerBase
     [Route("folder/{id}/display-name")]
     public Task<bool> UpdateFolderDisplayName(Ulid id, [FromBody] UpdateFolderDisplayNameRequest request)
     {
-        return _commandService.UpdateFolderDisplayNameAsync(id, request.DisplayName);
+        var command = new UpdateFolderDisplayNameCommand
+        {
+            FolderId = id,
+            DisplayName = request.DisplayName
+        };
+
+        return _handler.HandleAsync(command);
     }
 }
 

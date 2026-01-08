@@ -1,0 +1,13 @@
+# Coding Style Rules for dinhgallery-api
+
+## Type Declarations
+- **Use explicit types instead of `var` when possible**
+- Prefer clarity and readability over brevity
+- Example:
+  ```csharp
+  // Preferred
+  UpdateFolderDisplayNameCommandHandler handler = sp.GetRequiredService<UpdateFolderDisplayNameCommandHandler>();
+
+  // Avoid
+  var handler = sp.GetRequiredService<UpdateFolderDisplayNameCommandHandler>();
+  ```

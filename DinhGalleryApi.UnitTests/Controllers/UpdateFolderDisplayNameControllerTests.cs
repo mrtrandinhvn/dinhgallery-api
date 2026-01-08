@@ -1,4 +1,5 @@
-using dinhgallery_api.Controllers.GalleryEndpoints.Commands;
+using dinhgallery_api.BusinessObjects.Commands;
+using dinhgallery_api.Controllers.GalleryEndpoints.Commands.UpdateFolderDisplayName;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 
@@ -6,17 +7,17 @@ namespace DinhGalleryApi.UnitTests.Controllers;
 
 public class UpdateFolderDisplayNameControllerTests
 {
-    private readonly Mock<IGalleryCommandService> _mockCommandService;
+    private readonly Mock<ICommandHandler<UpdateFolderDisplayNameCommand, bool>> _mockHandler;
     private readonly UpdateFolderDisplayNameController _controller;
 
     public UpdateFolderDisplayNameControllerTests()
     {
-        _mockCommandService = new Mock<IGalleryCommandService>();
-        _controller = new UpdateFolderDisplayNameController(_mockCommandService.Object);
+        _mockHandler = new Mock<ICommandHandler<UpdateFolderDisplayNameCommand, bool>>();
+        _controller = new UpdateFolderDisplayNameController(_mockHandler.Object);
     }
 
     [Fact]
-    public async Task UpdateFolderDisplayName_WithValidRequest_ShouldCallServiceAndReturnResult()
+    public async Task UpdateFolderDisplayName_WithValidRequest_ShouldCallHandlerAndReturnResult()
     {
         // Arrange
         Ulid folderId = Ulid.NewUlid();
@@ -25,7 +26,9 @@ public class UpdateFolderDisplayNameControllerTests
             DisplayName = "New Folder Name"
         };
 
-        _mockCommandService.Setup(x => x.UpdateFolderDisplayNameAsync(folderId, request.DisplayName))
+        _mockHandler.Setup(x => x.HandleAsync(
+            It.Is<UpdateFolderDisplayNameCommand>(cmd => cmd.FolderId == folderId && cmd.DisplayName == request.DisplayName),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -33,11 +36,11 @@ public class UpdateFolderDisplayNameControllerTests
 
         // Assert
         Assert.True(result);
-        _mockCommandService.Verify(x => x.UpdateFolderDisplayNameAsync(folderId, request.DisplayName), Times.Once);
+        _mockHandler.Verify(x => x.HandleAsync(It.IsAny<UpdateFolderDisplayNameCommand>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task UpdateFolderDisplayName_WhenServiceReturnsFalse_ShouldReturnFalse()
+    public async Task UpdateFolderDisplayName_WhenHandlerReturnsFalse_ShouldReturnFalse()
     {
         // Arrange
         Ulid folderId = Ulid.NewUlid();
@@ -46,7 +49,7 @@ public class UpdateFolderDisplayNameControllerTests
             DisplayName = "New Folder Name"
         };
 
-        _mockCommandService.Setup(x => x.UpdateFolderDisplayNameAsync(folderId, request.DisplayName))
+        _mockHandler.Setup(x => x.HandleAsync(It.IsAny<UpdateFolderDisplayNameCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -54,7 +57,7 @@ public class UpdateFolderDisplayNameControllerTests
 
         // Assert
         Assert.False(result);
-        _mockCommandService.Verify(x => x.UpdateFolderDisplayNameAsync(folderId, request.DisplayName), Times.Once);
+        _mockHandler.Verify(x => x.HandleAsync(It.IsAny<UpdateFolderDisplayNameCommand>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -70,7 +73,7 @@ public class UpdateFolderDisplayNameControllerTests
             DisplayName = displayName
         };
 
-        _mockCommandService.Setup(x => x.UpdateFolderDisplayNameAsync(folderId, displayName))
+        _mockHandler.Setup(x => x.HandleAsync(It.IsAny<UpdateFolderDisplayNameCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -78,15 +81,15 @@ public class UpdateFolderDisplayNameControllerTests
 
         // Assert
         Assert.True(result);
-        _mockCommandService.Verify(
-            x => x.UpdateFolderDisplayNameAsync(
-                It.Is<Ulid>(id => id == folderId),
-                It.Is<string>(name => name == displayName)),
+        _mockHandler.Verify(
+            x => x.HandleAsync(
+                It.Is<UpdateFolderDisplayNameCommand>(cmd => cmd.FolderId == folderId && cmd.DisplayName == displayName),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
-    public async Task UpdateFolderDisplayName_WithEmptyDisplayName_ShouldStillCallService()
+    public async Task UpdateFolderDisplayName_WithEmptyDisplayName_ShouldStillCallHandler()
     {
         // Arrange
         Ulid folderId = Ulid.NewUlid();
@@ -95,7 +98,7 @@ public class UpdateFolderDisplayNameControllerTests
             DisplayName = ""
         };
 
-        _mockCommandService.Setup(x => x.UpdateFolderDisplayNameAsync(folderId, ""))
+        _mockHandler.Setup(x => x.HandleAsync(It.IsAny<UpdateFolderDisplayNameCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -103,7 +106,7 @@ public class UpdateFolderDisplayNameControllerTests
 
         // Assert
         Assert.False(result);
-        _mockCommandService.Verify(x => x.UpdateFolderDisplayNameAsync(folderId, ""), Times.Once);
+        _mockHandler.Verify(x => x.HandleAsync(It.IsAny<UpdateFolderDisplayNameCommand>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

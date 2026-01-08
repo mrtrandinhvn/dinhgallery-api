@@ -1,17 +1,18 @@
 using System.ComponentModel.DataAnnotations;
+using dinhgallery_api.BusinessObjects.Commands;
 using Microsoft.AspNetCore.Mvc;
 
-namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands;
+namespace dinhgallery_api.Controllers.GalleryEndpoints.Commands.CreateFolderWithFiles;
 
 [ApiController]
 [Route("gallery")]
 public class CreateFolderWithFilesController : ControllerBase
 {
-    private readonly IGalleryCommandService _commandService;
+    private readonly ICommandHandler<CreateFolderWithFilesCommand, Ulid?> _commandHandler;
 
-    public CreateFolderWithFilesController(IGalleryCommandService commandService)
+    public CreateFolderWithFilesController(ICommandHandler<CreateFolderWithFilesCommand, Ulid?> commandHandler)
     {
-        _commandService = commandService;
+        _commandHandler = commandHandler;
     }
 
     /// <summary>
@@ -22,12 +23,12 @@ public class CreateFolderWithFilesController : ControllerBase
         [FromForm][StringLength(250)] string? folderDisplayName,
         [FromForm] List<IFormFile> files)
     {
-        var savedFolderId = await _commandService.SaveFilesAsync(new SaveFilesInput
+        var command = new CreateFolderWithFilesCommand
         {
             FolderDisplayName = folderDisplayName,
-            FormFiles = files,
-        });
+            Files = files
+        };
 
-        return savedFolderId;
+        return await _commandHandler.HandleAsync(command);
     }
 }
