@@ -39,15 +39,4 @@ public static class WebApplicationExtensions
             .AllowAnonymous()
             .RequireRateLimiting(RateLimitPolicy.Version);
     }
-
-    public static void ConfigureStartupLogging(this WebApplication app)
-    {
-        var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
-        var logger = loggerFactory.CreateLogger("dinhgallery_api");
-        app.Lifetime.ApplicationStarted.Register(() =>
-        {
-            logger.LogInformation("Application started. Environment: {Environment}; ContentRoot: {ContentRootPath}",
-                app.Environment.EnvironmentName, app.Environment.ContentRootPath);
-        });
-    }
 }

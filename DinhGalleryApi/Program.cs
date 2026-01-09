@@ -1,6 +1,16 @@
 using dinhgallery_api.BusinessObjects;
+using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithProcessId()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter())
+);
 
 IServiceCollection services = builder.Services;
 services.AddControllers();
@@ -23,6 +33,5 @@ WebApplication app = builder.Build();
 app.ConfigureDevelopmentMiddleware();
 app.ConfigureMiddlewarePipeline();
 app.MapEndpoints();
-app.ConfigureStartupLogging();
 
 app.Run();
