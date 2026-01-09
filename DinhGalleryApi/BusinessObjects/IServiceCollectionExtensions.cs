@@ -1,5 +1,7 @@
+using System.Threading.RateLimiting;
 using dinhgallery_api.BusinessObjects.Commands;
 using dinhgallery_api.BusinessObjects.Commands.Decorators;
+using dinhgallery_api.BusinessObjects.Constants;
 using dinhgallery_api.BusinessObjects.Options;
 using dinhgallery_api.BusinessObjects.Queries;
 using dinhgallery_api.BusinessObjects.Queries.Decorators;
@@ -17,9 +19,13 @@ using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
 using dinhgallery_api.HostedServices;
 using dinhgallery_api.Infrastructures;
+using dinhgallery_api.Infrastructures.Authentication;
 using dinhgallery_api.Infrastructures.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.OpenApi;
 using Redis.OM;
 using StackExchange.Redis;
 
@@ -147,4 +153,89 @@ public static class IServiceCollectionExtensions
     {
         services.AddHostedService<IndexCreationService>();
     }
+
+    public static void ConfigureSwagger(this IServiceCollection services)
+    {
+        services.AddEndpointsApiExplorer();
+
+        const string schemeId = "bearer";
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+
+            options.AddSecurityDefinition(schemeId, new OpenApiSecurityScheme
+            {
+                Description = "DEVELOPMENT MODE: Authentication is mocked. All requests are automatically authenticated as Admin user. No token required.",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "bearer",
+            });
+
+            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference(schemeId, document)] = []
+            });
+        });
+    }
+
+    public static void ConfigureAuthorization(this IServiceCollection services)
+    {
+        services
+            .AddAuthorizationBuilder()
+            .SetFallbackPolicy(new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .RequireRole(AppRole.Admin)
+                .Build());
+    }
+
+    public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
+    {
+        services.AddEnvironmentBasedAuthentication(configuration, environment);
+    }
+
+    public static void ConfigureCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddCors(options =>
+        {
+            options.AddPolicy(name: CorsPolicy.AllowedOrigins, policy =>
+            {
+                string[] allowedOrigins = configuration["AllowedOrigins"]!
+                    .Split(';')
+                    .Where(x => !string.IsNullOrEmpty(x))
+                    .Select(x => x.Trim())
+                    .ToArray();
+                policy
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
+        });
+    }
+
+    public static void ConfigureRateLimiting(this IServiceCollection services)
+    {
+        services.AddRateLimiter(options =>
+        {
+            options.AddSlidingWindowLimiter(RateLimitPolicy.Version, opt =>
+            {
+                opt.PermitLimit = 5;
+                opt.Window = TimeSpan.FromSeconds(5);
+                opt.SegmentsPerWindow = 5;
+                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                opt.QueueLimit = 2;
+            });
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        });
+    }
+}
+
+public static class CorsPolicy
+{
+    public const string AllowedOrigins = "AllowedOrigins";
+}
+
+public static class RateLimitPolicy
+{
+    public const string Version = "version";
 }
