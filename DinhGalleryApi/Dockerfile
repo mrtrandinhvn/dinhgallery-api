@@ -24,4 +24,5 @@ RUN dotnet publish "./dinhgallery-api.csproj" -c $BUILD_CONFIGURATION -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY VERSION .
 ENTRYPOINT ["dotnet", "dinhgallery-api.dll"]

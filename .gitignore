@@ -353,5 +353,8 @@ MigrationBackup/
 Properties/launchSettings.json
 DinhGalleryApi/appsettings.Production.json
 /DinhGalleryApi/Properties/env.local
-*.tar
+**/*.tar
 /.claude/settings.local.json
+
+# Deployment configuration (contains server credentials)
+devops/deploy-config.bat

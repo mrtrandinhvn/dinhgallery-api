@@ -1,7 +1,10 @@
+using System.Threading.RateLimiting;
 using dinhgallery_api.BusinessObjects;
 using dinhgallery_api.BusinessObjects.Constants;
 using dinhgallery_api.Infrastructures.Authentication;
+using dinhgallery_api.Utilities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi;
@@ -66,6 +69,20 @@ services.AddCors(options =>
     });
 });
 
+const string VersionRateLimitPolicy = "version";
+services.AddRateLimiter(options =>
+{
+    options.AddSlidingWindowLimiter(VersionRateLimitPolicy, opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromSeconds(5);
+        opt.SegmentsPerWindow = 5;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 2;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -76,6 +93,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(AllowedOrigins);
+app.UseRateLimiter();
 app.UseStaticFiles(new StaticFileOptions
 {
     ServeUnknownFileTypes = true,
@@ -89,7 +107,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/version", () => "2.4.0").AllowAnonymous();
+app.MapGet("/version", () => VersionReader.GetCurrentVersion(builder.Environment.ContentRootPath))
+    .AllowAnonymous()
+    .RequireRateLimiting(VersionRateLimitPolicy);
 
 // Log after the application has started
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
