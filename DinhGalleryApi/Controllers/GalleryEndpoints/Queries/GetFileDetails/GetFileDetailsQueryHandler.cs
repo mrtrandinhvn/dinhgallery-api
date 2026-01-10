@@ -30,6 +30,6 @@ public class GetFileDetailsQueryHandler
             query.FileId);
 
         FileDetailsReadModel? fileDetails = await _repository.GetFileDetailsAsync(query.FileId);
-        return fileDetails == null ? null : new FileDetailsResponse(fileDetails);
+        return fileDetails is null ? null : FileDetailsResponse.FromReadModel(fileDetails);
     }
 }

@@ -34,13 +34,12 @@ public class GalleryQueryRepository : IGalleryQueryRepository
             ).Select(x => x.ToReadModel());
 
         FolderDetailsReadModel? folder = searchFolderTask;
-        if (folder == null)
+        if (folder is null)
         {
             return null;
         }
 
-        folder.Files = searchFilesTask;
-        return folder;
+        return folder with { Files = searchFilesTask };
     }
 
     public async Task<List<FolderDetailsReadModel>> GetFolderListAsync()

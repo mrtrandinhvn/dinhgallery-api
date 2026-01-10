@@ -1,11 +1,10 @@
-namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models
+namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
+
+public record FolderDetailsReadModel
 {
-    public class FolderDetailsReadModel
-    {
-        public string DisplayName { get; set; } = string.Empty;
-        public IEnumerable<FileDetailsReadModel> Files { get; set; } = Enumerable.Empty<FileDetailsReadModel>();
-        public DateTime CreatedAtUtc { get; set; }
-        public Ulid Id { get; set; }
-        public string PhysicalName { get; set; } = string.Empty;
-    }
+    public required Ulid Id { get; init; }
+    public required string DisplayName { get; init; }
+    public required string PhysicalName { get; init; }
+    public required DateTime CreatedAtUtc { get; init; }
+    public IEnumerable<FileDetailsReadModel> Files { get; init; } = [];
 }
