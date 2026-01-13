@@ -8,7 +8,7 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries.GetFolderList;
 /// Handler for the GetFolderListQuery.
 /// </summary>
 public class GetFolderListQueryHandler
-    : IQueryHandler<GetFolderListQuery, List<FolderDetailsReadModel>>
+    : IQueryHandler<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>>
 {
     private readonly ILogger<GetFolderListQueryHandler> _logger;
     private readonly IGalleryQueryRepository _repository;
@@ -21,12 +21,22 @@ public class GetFolderListQueryHandler
         _repository = repository;
     }
 
-    public async Task<List<FolderDetailsReadModel>> HandleAsync(
+    public async Task<PaginatedResult<FolderDetailsReadModel>> HandleAsync(
         GetFolderListQuery query,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Retrieving folder list");
+        _logger.LogInformation("Retrieving folder list (Page {PageNumber}, Size {PageSize})",
+            query.PageNumber, query.PageSize);
 
-        return await _repository.GetFolderListAsync();
+        var skip = (query.PageNumber - 1) * query.PageSize;
+        var (items, totalCount) = await _repository.GetFolderListAsync(skip, query.PageSize);
+
+        return new PaginatedResult<FolderDetailsReadModel>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = query.PageNumber,
+            PageSize = query.PageSize
+        };
     }
 }

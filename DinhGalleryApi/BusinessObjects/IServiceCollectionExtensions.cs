@@ -124,12 +124,12 @@ public static class IServiceCollectionExtensions
         });
 
         // Register query handlers with performance monitoring decorator
-        services.AddScoped<IQueryHandler<GetFolderListQuery, List<FolderDetailsReadModel>>>(sp =>
+        services.AddScoped<IQueryHandler<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>>>(sp =>
         {
             GetFolderListQueryHandler handler = sp.GetRequiredService<GetFolderListQueryHandler>();
-            ILogger<PerformanceMonitoringQueryHandlerDecorator<GetFolderListQuery, List<FolderDetailsReadModel>>> performanceLogger =
-                sp.GetRequiredService<ILogger<PerformanceMonitoringQueryHandlerDecorator<GetFolderListQuery, List<FolderDetailsReadModel>>>>();
-            return new PerformanceMonitoringQueryHandlerDecorator<GetFolderListQuery, List<FolderDetailsReadModel>>(handler, performanceLogger);
+            ILogger<PerformanceMonitoringQueryHandlerDecorator<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>>> performanceLogger =
+                sp.GetRequiredService<ILogger<PerformanceMonitoringQueryHandlerDecorator<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>>>>();
+            return new PerformanceMonitoringQueryHandlerDecorator<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>>(handler, performanceLogger);
         });
 
         services.AddScoped<IQueryHandler<GetFolderDetailsQuery, FolderDetailsReadModel?>>(sp =>

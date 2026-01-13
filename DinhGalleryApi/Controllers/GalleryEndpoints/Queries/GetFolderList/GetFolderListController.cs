@@ -9,22 +9,28 @@ namespace dinhgallery_api.Controllers.GalleryEndpoints.Queries.GetFolderList;
 [Route("gallery")]
 public class GetFolderListController : ControllerBase
 {
-    private readonly IQueryHandler<GetFolderListQuery, List<FolderDetailsReadModel>> _handler;
+    private readonly IQueryHandler<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>> _handler;
 
     public GetFolderListController(
-        IQueryHandler<GetFolderListQuery, List<FolderDetailsReadModel>> handler)
+        IQueryHandler<GetFolderListQuery, PaginatedResult<FolderDetailsReadModel>> handler)
     {
         _handler = handler;
     }
 
     /// <summary>
-    /// Gets a list of all folders in the gallery
+    /// Gets a paginated list of folders in the gallery
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
-    public Task<List<FolderDetailsReadModel>> GetFolderList()
+    public Task<PaginatedResult<FolderDetailsReadModel>> GetFolderList(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var query = new GetFolderListQuery();
+        var query = new GetFolderListQuery
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
         return _handler.HandleAsync(query);
     }
 }

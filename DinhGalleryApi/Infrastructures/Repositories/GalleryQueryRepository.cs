@@ -42,13 +42,20 @@ public class GalleryQueryRepository : IGalleryQueryRepository
         return folder with { Files = searchFilesTask };
     }
 
-    public async Task<List<FolderDetailsReadModel>> GetFolderListAsync()
+    public async Task<(List<FolderDetailsReadModel> Items, int TotalCount)> GetFolderListAsync(int skip, int take)
     {
-        return (await _redis.RedisCollection<FolderDbModel>()
+        var collection = _redis.RedisCollection<FolderDbModel>();
+
+        var totalCount = await collection.CountAsync();
+
+        var items = (await collection
             .OrderByDescending(x => x.CreatedAtUtc)
-            .Take(10)
+            .Skip(skip)
+            .Take(take)
             .ToListAsync())
             .Select(x => x.ToReadModel())
             .ToList();
+
+        return (items, (int)totalCount);
     }
 }
