@@ -34,7 +34,8 @@ public class VideoProcessingService : IVideoProcessingService
 
         _logger.LogInformation("Begin optimizing video for streaming: '{FilePath}'.", filePath);
 
-        string tempOutputPath = filePath + ".tmp";
+        string extension = Path.GetExtension(filePath);
+        string tempOutputPath = Path.ChangeExtension(filePath, ".tmp" + extension);
 
         try
         {
