@@ -358,3 +358,6 @@ DinhGalleryApi/appsettings.Production.json
 
 # Deployment configuration (contains server credentials)
 devops/deploy-config.bat
+
+# Claude Code temp files
+**/tmpclaude*
