@@ -9,7 +9,6 @@ builder.Host.UseSerilog((context, configuration) => configuration
     .Enrich.WithMachineName()
     .Enrich.WithProcessId()
     .Enrich.WithThreadId()
-    .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter())
 );
 
 IServiceCollection services = builder.Services;
