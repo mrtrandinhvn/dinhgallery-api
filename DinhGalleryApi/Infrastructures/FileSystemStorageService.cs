@@ -86,8 +86,12 @@ public class FileSystemStorageService : IStorageService
         {
             if (file.Length > 0)
             {
-                // Sanitize filename to prevent security issues and compatibility problems
-                string physicalFileName = SanitizeFilename(file.FileName);
+                // Sanitize filename and add timestamp to prevent CDN cache issues
+                string sanitizedName = SanitizeFilename(file.FileName);
+                string nameWithoutExt = Path.GetFileNameWithoutExtension(sanitizedName);
+                string extension = Path.GetExtension(sanitizedName);
+                string timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+                string physicalFileName = $"{nameWithoutExt}.{timestamp}{extension}";
                 string physicalFilePath = Path.Combine(folderPath, physicalFileName);
                 try
                 {
