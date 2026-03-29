@@ -32,8 +32,12 @@ public class FileSystemStorageService : IStorageService
         _logger.LogInformation("Begin deleting file from storage. File uri: {FileUri}.", absoluteUri);
         try
         {
-            string filePath = Path.GetFileName(absoluteUri.PathAndQuery);
-            string fullPath = Path.Combine(Directory.GetCurrentDirectory(), _galleryPath, filePath);
+            // Build the correct relative path under storage, including subfolders
+            string storageRoot = Path.Combine(Directory.GetCurrentDirectory(), _galleryPath);
+            string relativePath = absoluteUri.LocalPath.TrimStart('/'); // e.g. "storage/folder/file.jpg"
+            if (relativePath.StartsWith(_galleryPath + "/"))
+                relativePath = relativePath.Substring(_galleryPath.Length + 1); // remove "storage/"
+            string fullPath = Path.Combine(storageRoot, relativePath);
 
             _logger.LogInformation("File path in storage: '{FullPath}'.", fullPath);
             if (File.Exists(fullPath))
