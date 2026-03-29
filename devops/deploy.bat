@@ -41,9 +41,9 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Move file to deployment directory with sudo and deploy
+REM Move file to deployment directory and deploy
 echo [2/4] Moving file and deploying on remote server...
-ssh -p %SSH_PORT% %SSH_USER%@%SSH_HOST% "sudo mv ~/%IMAGE_NAME%_%NEW_VERSION%.tar %DEPLOY_PATH%/ && cd %DEPLOY_PATH% && sudo docker container remove %IMAGE_NAME%_latest --force 2>/dev/null || true && sudo docker image rm %IMAGE_NAME%:latest 2>/dev/null || true && sudo docker load -i ./%IMAGE_NAME%_%NEW_VERSION%.tar && sudo docker tag %IMAGE_NAME%:%NEW_VERSION% %IMAGE_NAME%:latest && sudo docker compose up --detach"
+ssh -p %SSH_PORT% %SSH_USER%@%SSH_HOST% "mv ~/%IMAGE_NAME%_%NEW_VERSION%.tar %DEPLOY_PATH%/ && cd %DEPLOY_PATH% && docker container remove %IMAGE_NAME%_latest --force 2>/dev/null || true && docker image rm %IMAGE_NAME%:latest 2>/dev/null || true && docker load -i ./%IMAGE_NAME%_%NEW_VERSION%.tar && docker tag %IMAGE_NAME%:%NEW_VERSION% %IMAGE_NAME%:latest && docker compose up --detach"
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: Remote Docker deployment failed!
     pause
