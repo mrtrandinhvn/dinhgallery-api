@@ -1,5 +1,6 @@
 using dinhgallery_api.Utilities;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Logging;
 
 namespace dinhgallery_api.BusinessObjects;
@@ -34,6 +35,16 @@ public static class WebApplicationExtensions
     public static void MapEndpoints(this WebApplication app)
     {
         app.MapControllers();
+
+        app.MapHealthChecks("/health/live", new()
+        {
+            Predicate = _ => false
+        }).AllowAnonymous();
+
+        app.MapHealthChecks("/health/ready", new()
+        {
+            Predicate = registration => registration.Tags.Contains("ready")
+        }).AllowAnonymous();
 
         app.MapGet("/version", () => VersionReader.GetCurrentVersion(app.Environment.ContentRootPath))
             .AllowAnonymous()

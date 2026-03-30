@@ -20,11 +20,13 @@ using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
 using dinhgallery_api.HostedServices;
 using dinhgallery_api.Infrastructures;
 using dinhgallery_api.Infrastructures.Authentication;
+using dinhgallery_api.Infrastructures.HealthChecks;
 using dinhgallery_api.Infrastructures.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 using Redis.OM;
 using StackExchange.Redis;
@@ -152,6 +154,16 @@ public static class IServiceCollectionExtensions
     public static void ConfigureHostedServices(this IServiceCollection services)
     {
         services.AddHostedService<IndexCreationService>();
+    }
+
+    public static void ConfigureHealthChecks(this IServiceCollection services)
+    {
+        services
+            .AddHealthChecks()
+            .AddCheck<RedisHealthCheck>(
+                "redis",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["ready"]);
     }
 
     public static void ConfigureSwagger(this IServiceCollection services)

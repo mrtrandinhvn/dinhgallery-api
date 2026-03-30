@@ -361,3 +361,6 @@ devops/deploy-config.bat
 
 # Claude Code temp files
 **/tmpclaude*
+.dotnet/.dotnet/10.0.102.aspNetCertificateSentinel
+.dotnet/.dotnet/10.0.102.dotnetFirstUseSentinel
+.dotnet/.dotnet/10.0.102.toolpath.sentinel

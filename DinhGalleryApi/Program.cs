@@ -23,6 +23,7 @@ services.ConfigureAuthorization();
 services.ConfigureAuthentication(builder.Configuration, builder.Environment);
 services.ConfigureOptions(builder.Configuration);
 services.ConfigureAppServices(builder.Configuration);
+services.ConfigureHealthChecks();
 services.ConfigureHostedServices();
 services.ConfigureCors(builder.Configuration);
 services.ConfigureRateLimiting();
