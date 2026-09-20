@@ -58,4 +58,15 @@ public class GalleryQueryRepository : IGalleryQueryRepository
 
         return (items, (int)totalCount);
     }
+
+    public async Task<List<FolderDetailsReadModel>> SearchFoldersByNameAsync(string searchText, int take)
+    {
+        return (await _redis.RedisCollection<FolderDbModel>()
+            .Where(x => x.DisplayName.Contains(searchText))
+            .OrderByDescending(x => x.UpdatedAtUtc)
+            .Take(take)
+            .ToListAsync())
+            .Select(x => x.ToReadModel())
+            .ToList();
+    }
 }

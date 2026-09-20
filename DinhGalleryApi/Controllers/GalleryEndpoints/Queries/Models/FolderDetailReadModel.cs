@@ -6,5 +6,6 @@ public record FolderDetailsReadModel
     public required string DisplayName { get; init; }
     public required string PhysicalName { get; init; }
     public required DateTime CreatedAtUtc { get; init; }
+    public required DateTime UpdatedAtUtc { get; init; }
     public IEnumerable<FileDetailsReadModel> Files { get; init; } = [];
 }

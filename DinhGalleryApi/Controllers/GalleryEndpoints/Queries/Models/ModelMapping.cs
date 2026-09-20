@@ -24,6 +24,7 @@ public static class ModelMapping
             DisplayName = model.DisplayName,
             Id = model.Id,
             PhysicalName = model.PhysicalFolderName,
+            UpdatedAtUtc = model.UpdatedAtUtc,
         };
     }
 }

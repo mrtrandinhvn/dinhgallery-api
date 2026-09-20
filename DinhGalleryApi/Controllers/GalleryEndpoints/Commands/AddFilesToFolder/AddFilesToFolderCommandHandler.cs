@@ -17,11 +17,13 @@ public class AddFilesToFolderCommandHandler
     private readonly IStorageService _storageService;
     private readonly IGalleryQueryRepository _queryRepository;
     private readonly IVideoProcessingService _videoProcessingService;
+    private readonly IGalleryFolderWriteRepository _folderRepository;
 
     public AddFilesToFolderCommandHandler(
         ILogger<AddFilesToFolderCommandHandler> logger,
         IGalleryFileWriteRepository fileRepository,
         IGalleryQueryRepository queryRepository,
+        IGalleryFolderWriteRepository folderRepository,
         IStorageService storageService,
         IVideoProcessingService videoProcessingService)
     {
@@ -29,6 +31,7 @@ public class AddFilesToFolderCommandHandler
         _storageService = storageService;
         _fileRepository = fileRepository;
         _queryRepository = queryRepository;
+        _folderRepository = folderRepository;
         _videoProcessingService = videoProcessingService;
     }
 
@@ -87,6 +90,7 @@ public class AddFilesToFolderCommandHandler
         }
 
         await Task.WhenAll(persistFileTasks);
+        await _folderRepository.TouchAsync(folderId);
         return folderId;
     }
 }

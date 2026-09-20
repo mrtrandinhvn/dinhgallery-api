@@ -17,5 +17,8 @@ public partial class FolderDbModel
     [Indexed(Sortable = true)]
     public DateTime CreatedAtUtc { get; set; }
 
+    [Indexed(Sortable = true)]
+    public DateTime UpdatedAtUtc { get; set; }
+
     public string PhysicalFolderName { get; set; } = string.Empty;
 }
