@@ -19,5 +19,8 @@ set IMAGE_NAME=dinhgalleryapi
 REM API URL for version verification
 set VERSION_URL=https://your-api-domain/version
 
+REM API readiness URL. If omitted, deploy.bat derives this from VERSION_URL.
+set HEALTH_CHECK_URL=https://your-api-domain/health/ready
+
 REM Optional: Uncomment and set if using non-default SSH key
 REM set SSH_KEY_PATH=C:\Users\YourUser\.ssh\id_rsa
