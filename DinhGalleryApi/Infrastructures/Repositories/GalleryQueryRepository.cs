@@ -62,11 +62,28 @@ public class GalleryQueryRepository : IGalleryQueryRepository
     public async Task<List<FolderDetailsReadModel>> SearchFoldersByNameAsync(string searchText, int take)
     {
         return (await _redis.RedisCollection<FolderDbModel>()
-            .Where(x => x.DisplayName.Contains(searchText))
+            .Raw(GallerySearchQuery.BuildFolderNameContainsQuery(searchText))
             .OrderByDescending(x => x.UpdatedAtUtc)
             .Take(take)
             .ToListAsync())
             .Select(x => x.ToReadModel())
             .ToList();
+    }
+}
+
+internal static class GallerySearchQuery
+{
+    public static string BuildFolderNameContainsQuery(string searchText)
+    {
+        return $"@DisplayName:*{EscapeQueryText(searchText)}*";
+    }
+
+    private static string EscapeQueryText(string searchText)
+    {
+        const string specialCharacters = ",.<>[]{}\\\"':;!@#$%^&*()-+=~|?";
+        return string.Concat(searchText.Select(character =>
+            specialCharacters.Contains(character) || char.IsWhiteSpace(character)
+                ? $"\\{character}"
+                : character.ToString()));
     }
 }
