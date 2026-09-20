@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 using Redis.OM;
+using Redis.OM.Contracts;
 using StackExchange.Redis;
 
 namespace dinhgallery_api.BusinessObjects;
@@ -67,6 +68,8 @@ public static class IServiceCollectionExtensions
                 Password = redisOptions.Password,
             });
         });
+        services.AddSingleton<IRedisConnectionProvider>(sp =>
+            sp.GetRequiredService<RedisConnectionProvider>());
 
         services.AddScoped<IGalleryFolderWriteRepository, GalleryFolderWriteRepository>();
         services.AddScoped<IGalleryFileWriteRepository, GalleryFileWriteRepository>();
