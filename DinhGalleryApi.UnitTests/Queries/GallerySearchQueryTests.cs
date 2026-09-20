@@ -16,4 +16,12 @@ public class GallerySearchQueryTests
 
         Assert.Equal(expectedQuery, query);
     }
+
+    [Fact]
+    public void FolderNameContains_MatchesOneCharacterSearchText()
+    {
+        bool matches = GallerySearchQuery.FolderNameContains("Example Gallery", "x");
+
+        Assert.True(matches);
+    }
 }

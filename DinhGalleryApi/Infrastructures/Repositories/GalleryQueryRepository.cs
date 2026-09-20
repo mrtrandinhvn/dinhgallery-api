@@ -61,11 +61,22 @@ public class GalleryQueryRepository : IGalleryQueryRepository
 
     public async Task<List<FolderDetailsReadModel>> SearchFoldersByNameAsync(string searchText, int take)
     {
-        return (await _redis.RedisCollection<FolderDbModel>()
-            .Raw(GallerySearchQuery.BuildFolderNameContainsQuery(searchText))
-            .OrderByDescending(x => x.UpdatedAtUtc)
-            .Take(take)
-            .ToListAsync())
+        var folders = _redis.RedisCollection<FolderDbModel>();
+        var matchingFolders = searchText.Length == 1
+            // RediSearch does not index one-character infix terms, so filter the
+            // ordered folder list in memory for this edge case.
+            ? (await folders
+                .OrderByDescending(x => x.UpdatedAtUtc)
+                .ToListAsync())
+                .Where(x => GallerySearchQuery.FolderNameContains(x.DisplayName, searchText))
+                .Take(take)
+            : await folders
+                .Raw(GallerySearchQuery.BuildFolderNameContainsQuery(searchText))
+                .OrderByDescending(x => x.UpdatedAtUtc)
+                .Take(take)
+                .ToListAsync();
+
+        return matchingFolders
             .Select(x => x.ToReadModel())
             .ToList();
     }
@@ -76,6 +87,11 @@ internal static class GallerySearchQuery
     public static string BuildFolderNameContainsQuery(string searchText)
     {
         return $"@DisplayName:*{EscapeQueryText(searchText)}*";
+    }
+
+    public static bool FolderNameContains(string displayName, string searchText)
+    {
+        return displayName.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string EscapeQueryText(string searchText)
