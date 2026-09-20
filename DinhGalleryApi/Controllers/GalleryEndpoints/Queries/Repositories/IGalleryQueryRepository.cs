@@ -7,4 +7,5 @@ public interface IGalleryQueryRepository
     Task<FileDetailsReadModel?> GetFileDetailsAsync(Ulid fileId);
     Task<FolderDetailsReadModel?> GetFolderDetailsAsync(Ulid folderId);
     Task<(List<FolderDetailsReadModel> Items, int TotalCount)> GetFolderListAsync(int skip, int take);
+    Task<List<FolderDetailsReadModel>> SearchFoldersByNameAsync(string searchText, int take);
 }

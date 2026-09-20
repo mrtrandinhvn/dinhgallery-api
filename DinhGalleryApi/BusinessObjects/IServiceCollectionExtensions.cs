@@ -15,6 +15,7 @@ using dinhgallery_api.Controllers.GalleryEndpoints.Commands.UpdateFolderDisplayN
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.GetFileDetails;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.GetFolderDetails;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.GetFolderList;
+using dinhgallery_api.Controllers.GalleryEndpoints.Queries.SearchFolders;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Models;
 using dinhgallery_api.Controllers.GalleryEndpoints.Queries.Repositories;
 using dinhgallery_api.HostedServices;
@@ -81,6 +82,7 @@ public static class IServiceCollectionExtensions
         services.AddScoped<GetFolderListQueryHandler>();
         services.AddScoped<GetFolderDetailsQueryHandler>();
         services.AddScoped<GetFileDetailsQueryHandler>();
+        services.AddScoped<SearchFoldersQueryHandler>();
 
         // Register concrete command handlers
         services.AddScoped<UpdateFolderDisplayNameCommandHandler>();
@@ -148,6 +150,14 @@ public static class IServiceCollectionExtensions
             ILogger<PerformanceMonitoringQueryHandlerDecorator<GetFileDetailsQuery, FileDetailsResponse?>> performanceLogger =
                 sp.GetRequiredService<ILogger<PerformanceMonitoringQueryHandlerDecorator<GetFileDetailsQuery, FileDetailsResponse?>>>();
             return new PerformanceMonitoringQueryHandlerDecorator<GetFileDetailsQuery, FileDetailsResponse?>(handler, performanceLogger);
+        });
+
+        services.AddScoped<IQueryHandler<SearchFoldersQuery, List<FolderDetailsReadModel>>>(sp =>
+        {
+            SearchFoldersQueryHandler handler = sp.GetRequiredService<SearchFoldersQueryHandler>();
+            ILogger<PerformanceMonitoringQueryHandlerDecorator<SearchFoldersQuery, List<FolderDetailsReadModel>>> performanceLogger =
+                sp.GetRequiredService<ILogger<PerformanceMonitoringQueryHandlerDecorator<SearchFoldersQuery, List<FolderDetailsReadModel>>>>();
+            return new PerformanceMonitoringQueryHandlerDecorator<SearchFoldersQuery, List<FolderDetailsReadModel>>(handler, performanceLogger);
         });
     }
 

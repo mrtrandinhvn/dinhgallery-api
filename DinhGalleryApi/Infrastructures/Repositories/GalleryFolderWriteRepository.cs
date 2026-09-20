@@ -29,7 +29,8 @@ public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
         FolderDbModel entity = new()
         {
             DisplayName = input.DisplayName,
-            CreatedAtUtc = DateTime.UtcNow,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
             PhysicalFolderName = input.PhysicalName,
         };
         try
@@ -60,6 +61,7 @@ public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
             }
 
             folder.DisplayName = input.DisplayName;
+            folder.UpdatedAtUtc = DateTime.UtcNow;
             await folders.UpdateAsync(folder);
             _logger.LogInformation("Successfully updated folder display name. FolderId: {FolderId}, NewDisplayName: {DisplayName}.", input.FolderId, input.DisplayName);
             return true;
@@ -67,6 +69,29 @@ public class GalleryFolderWriteRepository : IGalleryFolderWriteRepository
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update folder display name. input: {Input}.", JsonConvert.SerializeObject(input));
+            return false;
+        }
+    }
+
+    public async Task<bool> TouchAsync(Ulid folderId)
+    {
+        IRedisCollection<FolderDbModel> folders = _redis.RedisCollection<FolderDbModel>();
+        try
+        {
+            FolderDbModel? folder = await folders.FindByIdAsync(folderId.ToString());
+            if (folder == null)
+            {
+                _logger.LogWarning("Folder not found with ID: {FolderId}.", folderId);
+                return false;
+            }
+
+            folder.UpdatedAtUtc = DateTime.UtcNow;
+            await folders.UpdateAsync(folder);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update folder timestamp. FolderId: {FolderId}.", folderId);
             return false;
         }
     }
